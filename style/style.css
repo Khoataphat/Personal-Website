@@ -1,0 +1,260 @@
+/* ========================================================= */
+/* 1. CSS Variables (Custom Properties) - Dùng Bảng Màu Mới */
+/* ========================================================= */
+:root {
+    /* MÀU CHỦ ĐẠO TỪ AVATAR */
+    --primary-green: #17B43F;   /* Xanh Lá Nổi Bật (Nút/Viền Contact) */
+    --secondary-blue: #1A73E8;  /* Xanh Dương (Màu Nhấn/Hover/Viền Avatar) */
+    --hover-green: #148f32;     /* Xanh Lá Đậm hơn khi hover */
+    
+    /* MÀU NỀN & VĂN BẢN */
+    --background-light: #FFFFFF;
+    --text-dark: #2C3E50;
+    --text-light: #ECF0F1;
+}
+
+/* ========================================================= */
+/* 2. Global Styles & Body */
+/* ========================================================= */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh; 
+    background-color: var(--background-light); /* Nền Body Trắng Sạch */
+    background-attachment: fixed; 
+}
+
+/* ========================================================= */
+/* 3. Header Styling */
+/* ========================================================= */
+header {
+    padding: 15px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Áp dụng màu nền Trắng Sạch cho Header */
+    background-color: var(--background-light); 
+    position: sticky; 
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.logo {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--text-dark); /* Logo màu tối */
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.logo:hover {
+    color: var(--secondary-blue); /* Hover màu Xanh Dương */
+    transform: scale(1.05);
+}
+
+/* ========================================================= */
+/* 4. Navigation Links */
+/* ========================================================= */
+nav a {
+    display: inline-block;
+    color: var(--text-dark); 
+    text-align: center;
+    padding: 10px 20px;
+    text-decoration: none; 
+    font-weight: 500;
+    border: 2px solid transparent; 
+    border-radius: 20px;
+    transition: all 0.3s ease; /* Chuyển động mượt mà cho cả màu và viền */
+}
+
+nav a:hover {
+    color: var(--secondary-blue); /* Hover màu Xanh Dương */
+    border-color: var(--secondary-blue); /* Viền màu Xanh Dương khi hover */
+    background-color: transparent;
+}
+
+/* Nút Contact (Viền Nổi Bật) */
+.nav-contact {
+    /* Đặt lại thuộc tính viền cố định, nhưng đổi màu chữ */
+    border: 2px solid var(--primary-green);
+    color: var(--primary-green); /* Chữ màu xanh lá */
+    background-color: transparent; /* Đảm bảo nền trong suốt */
+}
+
+.nav-contact:hover {
+    /* Đổi nền khi hover */
+    background-color: var(--primary-green);
+    color: var(--text-light); /* Chữ trắng trên nền xanh lá */
+    border-color: var(--primary-green);
+}
+
+/* ========================================================= */
+/* 5. Main Content Layout */
+/* ========================================================= */
+main {
+    flex-grow: 1; 
+    background-position: center center; 
+    background-repeat: no-repeat; 
+    background-size: cover; 
+    
+    /* Áp dụng Ảnh Nền với lớp phủ nhẹ */
+    background-image: 
+        linear-gradient(rgba(0, 0, 0, 0.01), rgba(0, 0, 0, 0.01)), /* Lớp phủ rất nhẹ */
+        url('/asset/background.jpg'); 
+}
+
+section {
+    min-height: calc(100vh - 80px); 
+    display: flex;
+    justify-content: center; 
+    align-items: center; 
+    padding: 20px;
+}
+
+/* ========================================================= */
+/* 6. Intro Section Styling */
+/* ========================================================= */
+.intro {
+    max-width: 1200px; 
+    padding: 40px;
+    background-color: rgba(255, 255, 255, 0.95); /* Nền Trắng Sạch */
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 40px; 
+    text-align: left;
+    margin: 0; 
+}
+
+/* ========================================================= */
+/* 7. Image and Text */
+/* ========================================================= */
+.avatar {
+    width: 250px; 
+    height: 250px;
+    border-radius: 50%;
+    object-fit: cover;
+    /* Viền ảnh đại diện màu Xanh Dương */
+    border: 5px solid var(--secondary-blue); 
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.header-text h1, .header-text h2, .header-text p {
+    color: var(--text-dark);
+}
+
+.header-text h1 {
+    font-size: 3em;
+    margin-top: 0;
+    margin-bottom: 5px;
+}
+.header-text h2 {
+    font-size: 2em;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+/* ========================================================= */
+/* 8. Social Links & Button */
+/* ========================================================= */
+.end-intro {
+    display: flex;
+    align-items: center; 
+    gap: 20px; 
+}
+
+.btn-downloadcv {
+    padding: 12px 25px;
+    background-color: var(--primary-green); /* Nút màu Xanh Lá Nổi Bật */
+    color: white;
+    border: none;
+    border-radius: 30px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-downloadcv:hover {
+    background-color: var(--hover-green); /* Hover màu Xanh Lá Đậm */
+}
+
+.social-links a i {
+    font-size: 1.8em;
+    color: var(--text-dark); /* Icon màu tối */
+    transition: color 0.3s;
+}
+
+.social-links a:hover i {
+    color: var(--secondary-blue); /* Hover icon màu Xanh Dương */
+}
+
+/* ========================================================= */
+/* 9. Footer */
+/* ========================================================= */
+footer {
+    text-align: center;
+    padding: 15px;
+    color: var(--text-light); /* Chữ màu xám nhạt */
+    background-color: var(--text-dark); /* Nền tối để tương phản */
+    position: relative;
+    z-index: 999;
+}
+
+
+/* ========================================================= */
+/* 10. RESPONSIVE DESIGN (Media Query) */
+/* ========================================================= */
+@media screen and (max-width: 768px) {
+    /* --- 1. HEADER --- */
+    header {
+        flex-direction: column;
+        align-items: center; 
+        padding: 15px 10px;
+    }
+    .logo { margin-bottom: 10px; }
+    nav a { padding: 10px 6px; font-size: 0.9em; }
+
+    /* --- 2. INTRO SECTION --- */
+    .intro {
+        flex-direction: column; 
+        text-align: center; 
+        padding: 20px 10px; 
+        max-width: 95%; 
+        gap: 20px; 
+    }
+    .avatar {
+        width: 150px; /* Giảm kích thước ảnh đại diện cho mobile */
+        height: 150px;
+    }
+    
+    /* --- 3. TEXT & BUTTONS --- */
+    .header-text { text-align: center; }
+    
+    .header-text h1 { font-size: 1.8em; margin-bottom: 10px;}
+    .header-text h2 { font-size: 1.4em; margin-bottom: 15px;}
+
+    .end-intro {
+        flex-direction: column; 
+        gap: 15px;
+        align-items: center; /* Căn giữa theo chiều ngang khi xếp dọc */
+    }
+
+    .btn-downloadcv {
+        width: 100%;
+        max-width: 280px; /* Giới hạn chiều rộng nút */
+        margin-right: 0;
+    }
+
+    .social-links {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+    }
+}
