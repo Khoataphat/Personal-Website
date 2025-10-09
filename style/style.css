@@ -42,12 +42,16 @@ header {
 }
 
 .logo {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 28px;
-    font-weight: bold;
-    color: var(--text-dark); /* Logo màu tối */
+    /* THAY ĐỔI Ở ĐÂY */
+    font-family: 'Dancing Script', cursive; 
+    
+    font-size: 48px;
+    /* Font thư pháp thường có nét đậm riêng, nên có thể điều chỉnh font-weight */
+    font-weight: 700; /* Đổi thành 700 hoặc 400 tùy theo sở thích */
+    
+    color: var(--text-dark); 
     letter-spacing: 1px;
-    text-transform: uppercase;
+    text-transform: uppercase; /* Lưu ý: Các font thư pháp có thể trông không đẹp khi viết HOA */
     cursor: pointer;
     transition: color 0.3s ease, transform 0.3s ease;
 }
@@ -119,7 +123,7 @@ section {
 /* ========================================================= */
 /* 6. Intro Section Styling */
 /* ========================================================= */
-.intro {
+.box {
     max-width: 1200px; 
     padding: 40px;
     background-color: rgba(255, 255, 255, 0.95); /* Nền Trắng Sạch */
@@ -131,7 +135,17 @@ section {
     text-align: left;
     margin: 0; 
 }
-
+.about-me{
+    flex-direction: column; /* Xếp dọc */
+    text-align: center; /* Căn giữa chữ */
+    gap: 20px; /* Khoảng cách giữa các phần tử */
+}
+.intro-content {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    width: 100%; /* Đảm bảo nó dùng hết chiều rộng */
+}
 /* ========================================================= */
 /* 7. Image and Text */
 /* ========================================================= */
@@ -143,6 +157,23 @@ section {
     /* Viền ảnh đại diện màu Xanh Dương */
     border: 5px solid var(--secondary-blue); 
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.avatar2 {
+    width: 420px; 
+    height: 420px;
+    border-radius: 25%;
+    object-fit: cover;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    
+    /* 1. Thêm padding để tạo khoảng trống cho "viền" */
+    padding: 5px; /* Độ dày của viền gradient */
+    
+    /* 2. Áp dụng gradient làm background */
+    background: linear-gradient(to right, #38ef7d, #11998e); /* Màu gradient */
+    
+    /* 3. Dùng background-clip để CẮT background, chỉ giữ lại phần padding */
+    background-clip: padding-box; 
 }
 
 .header-text h1, .header-text h2, .header-text p {
@@ -158,6 +189,64 @@ section {
     font-size: 2em;
     margin-top: 0;
     margin-bottom: 20px;
+}
+.box .basic-info,
+.box .skills,
+.box .hobbies {
+    /* Đảm bảo các khối không co lại quá mức và có chiều rộng hợp lý */
+    width: 100%;
+    max-width: 400px; /* Chiều rộng tối đa cho mỗi khối */
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.1); /* Thêm viền nhẹ */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); /* Thêm bóng đổ nhẹ */
+}
+
+/* Tạo container để 2 hoặc 3 khối dưới cùng xếp ngang nhau */
+.info-group {
+    display: flex;
+    justify-content: space-between; /* Đẩy các khối ra hai bên */
+    gap: 20px;
+    width: 100%;
+    max-width: 1000px; /* Giới hạn chiều rộng container nhóm */
+    margin-top: 20px;
+    flex-wrap: wrap; /* Cho phép các khối xuống dòng khi màn hình nhỏ */
+}
+
+/* Style cho tiêu đề và danh sách */
+.box h2, .box h3 {
+    color: var(--secondary-blue); /* Tiêu đề màu xanh nổi bật */
+    margin-top: 0;
+    border-bottom: 2px solid var(--primary-green); /* Đường viền dưới cho tiêu đề */
+    padding-bottom: 5px;
+    margin-bottom: 15px;
+}
+
+.box ul {
+    list-style: none;
+    padding: 0;
+}
+
+.box ul li {
+    padding: 5px 0;
+    font-size: 1.1em;
+    color: var(--text-dark);
+}
+
+.box ul li i {
+    color: var(--primary-green); /* Icon màu xanh lá */
+    margin-right: 10px;
+}
+
+/* Style cho bảng thông tin */
+.basic-info table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.basic-info table td {
+    padding: 5px 0;
+    font-size: 1.1em;
 }
 
 /* ========================================================= */
@@ -207,6 +296,33 @@ footer {
     z-index: 999;
 }
 
+div > p{
+    color: var(--text-dark); 
+    font-size: 1.8em;
+    line-height: 1.6;
+    margin: 0;
+    font-weight: 500;
+    /* XÓA: text-align: justify; và text-justify: inter-word; vì làm đoạn giới thiệu khó đọc */
+    /* text-align: justify;
+    text-justify: inter-word; */
+    
+    max-width: 800px;
+    /* XÓA: Căn giữa tự động để nó căn trái trong container mới */
+    /* margin-left: auto; 
+    margin-right: auto; */
+    
+    font-family: 'Arial', sans-serif;
+    padding: 10px;
+    border-radius: 10px;
+}
+.info {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 10px 0;
+    margin-top: 40px;
+    align-items: center;
+}
+
 
 /* ========================================================= */
 /* 10. RESPONSIVE DESIGN (Media Query) */
@@ -222,7 +338,7 @@ footer {
     nav a { padding: 10px 6px; font-size: 0.9em; }
 
     /* --- 2. INTRO SECTION --- */
-    .intro {
+    .box {
         flex-direction: column; 
         text-align: center; 
         padding: 20px 10px; 
