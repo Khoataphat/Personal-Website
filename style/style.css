@@ -134,6 +134,8 @@ section {
     gap: 40px; 
     text-align: left;
     margin: 0; 
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
 .about-me{
     flex-direction: column; /* Xếp dọc */
@@ -212,7 +214,34 @@ section {
     margin-top: 20px;
     flex-wrap: wrap; /* Cho phép các khối xuống dòng khi màn hình nhỏ */
 }
+/* Thiết lập kích thước cho container chứa CV */
+.cv {
+    /* Quan trọng: Dùng flexbox để căn giữa nội dung (iframe) */
+    display: flex;
+    justify-content: center;
+    align-items: center; 
+    flex-direction: column;
+    
+    max-width: 1000px; 
+    margin: 40px auto; 
+    padding: 0; /* Xóa padding để iframe sát cạnh (tùy chọn) */
+    
+    /* Các style box khác (background, shadow) */
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
 
+/* Thiết lập cho IFRAME */
+.cv iframe {
+    /* Xóa các thuộc tính width/height nếu bạn đã đặt trong HTML, 
+       hoặc đặt chúng ở đây */
+    border: none;
+    display: block; /* Quan trọng để tránh lỗi khoảng trắng */
+    
+    /* Đảm bảo không bị giới hạn chiều rộng/cao bởi CSS bên ngoài */
+    /* width và height đã được đặt trong HTML để dễ kiểm soát hơn */
+}
 /* Style cho tiêu đề và danh sách */
 .box h2, .box h3 {
     color: var(--secondary-blue); /* Tiêu đề màu xanh nổi bật */
@@ -278,12 +307,50 @@ section {
     font-size: 1.8em;
     color: var(--text-dark); /* Icon màu tối */
     transition: color 0.3s;
+    padding: 10px;
 }
 
 .social-links a:hover i {
     color: var(--secondary-blue); /* Hover icon màu Xanh Dương */
 }
+.project-card {
+    /* 1. Tạo Khung Box Cơ Bản */
+    background-color: var(--background-light); /* Nền trắng bên trong box */
+    padding: 30px;
+    border-radius: 15px; /* Bo tròn các góc */
+    text-align: center;
+    
+    /* 2. Hiệu ứng Khối Nổi */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Bóng đổ nhẹ, làm box nổi lên */
+    
+    /* 3. Viền (Tùy chọn) */
+    border: 1px solid rgba(0, 0, 0, 0.1); /* Viền mỏng màu xám nhẹ */
+    
+    /* 4. Hiệu ứng chuyển động */
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    margin-bottom: 20px;
+}
 
+.project-card:hover {
+    /* Khi người dùng rê chuột vào */
+    transform: translateY(-5px); /* Nhấc box lên 5px (tạo cảm giác 3D) */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); /* Bóng đổ đậm hơn khi nhấc lên */
+    border-color: var(--secondary-blue); /* Viền chuyển sang màu xanh nổi bật */
+}
+
+
+/* Style cho nội dung bên trong box */
+.project-card h3 {
+    color: var(--secondary-blue);
+    font-size: 1.5em;
+    margin-top: 0;
+}
+
+.project-card p {
+    color: var(--text-dark);
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
 /* ========================================================= */
 /* 9. Footer */
 /* ========================================================= */
@@ -322,7 +389,138 @@ div > p{
     margin-top: 40px;
     align-items: center;
 }
+/* ========================================================= */
+/* 9. CONTACT PAGE STYLING (Thêm mới) */
+/* ========================================================= */
 
+.contact-container {
+    display: flex;
+    gap: 50px;
+    align-items: flex-start; /* Căn trên cùng */
+    padding: 60px;
+}
+
+.contact-details, .contact-form-wrapper {
+    flex: 1; /* Chia đều không gian 50/50 */
+    max-width: 50%;
+}
+
+/* --- CONTACT DETAILS (Cột Trái) --- */
+.contact-details h3 {
+    color: var(--secondary-blue);
+    border-bottom: 2px solid var(--primary-green);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.contact-details p {
+    line-height: 1.6;
+    margin-bottom: 30px;
+    font-size: 1.1em;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+.info-item i {
+    color: var(--primary-green);
+    font-size: 1.5em;
+    margin-right: 15px;
+    width: 30px; /* Cố định chiều rộng icon */
+    text-align: center;
+}
+
+.info-item a {
+    color: var(--text-dark);
+    text-decoration: none;
+}
+
+/* --- SOCIAL LINKS --- */
+.contact {
+    margin-top: 30px;
+}
+
+.contact a {
+    color: var(--secondary-blue);
+    font-size: 2em;
+    margin-right: 20px;
+    transition: color 0.3s;
+}
+
+.contact a:hover {
+    color: var(--primary-green);
+}
+
+/* --- CONTACT FORM (Cột Phải) --- */
+.contact-form-wrapper h3 {
+    color: var(--secondary-blue);
+    border-bottom: 2px solid var(--primary-green);
+    padding-bottom: 10px;
+    margin-bottom: 25px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.contact-form label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: var(--text-dark);
+}
+
+.contact-form input[type="text"],
+.contact-form input[type="email"],
+.contact-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1em;
+    box-sizing: border-box; /* Tính padding vào width */
+    transition: border-color 0.3s;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+    border-color: var(--secondary-blue);
+    outline: none;
+}
+
+.btn-submit {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    background-color: var(--primary-green);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.btn-submit:hover {
+    background-color: var(--hover-green);
+    transform: translateY(-2px);
+}
+
+/* --- Responsive (Mobile) --- */
+@media screen and (max-width: 850px) {
+    .contact-container {
+        flex-direction: column; /* Chuyển thành xếp dọc trên màn hình nhỏ */
+        padding: 40px 20px;
+    }
+
+    .contact-details, .contact-form-wrapper {
+        max-width: 100%;
+    }
+}
 
 /* ========================================================= */
 /* 10. RESPONSIVE DESIGN (Media Query) */
