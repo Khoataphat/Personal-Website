@@ -1,0 +1,127 @@
+
+/* --- Responsive (Mobile) --- */
+@media screen and (max-width: 850px) {
+    .contact-container {
+        flex-direction: column; /* Chuyển thành xếp dọc trên màn hình nhỏ */
+        padding: 40px 20px;
+    }
+
+    .contact-details, .contact-form-wrapper {
+        max-width: 100%;
+    }
+}
+
+/* ========================================================= */
+/* 10. RESPONSIVE DESIGN (Media Query) */
+/* ========================================================= */
+/* _responsive.css */
+
+/* ========================================================= */
+/* 1. TABLET/LỚN HƠN MOBILE (<= 992px) */
+/* Áp dụng cho màn hình lớn hơn điện thoại, thường là Tablet */
+/* ========================================================= */
+@media screen and (max-width: 992px) {
+    /* --- Bố cục chung --- */
+    .box {
+        gap: 20px; /* Giảm khoảng cách giữa các khối */
+        padding: 30px;
+    }
+
+    /* --- Nhóm thông tin dưới (Basic Info, Skills, Hobbies) --- */
+    /* Buộc các khối này xếp chồng lên nhau thay vì xếp ngang 3 cột */
+    .info-group {
+        flex-direction: column; 
+        gap: 20px;
+        align-items: center; /* Căn giữa các khối khi xếp dọc */
+    }
+    .box .basic-info,
+    .box .skills,
+    .box .hobbies {
+        max-width: 100%; /* Cho phép chiếm hết chiều rộng */
+    }
+
+    /* --- Trang Contact --- */
+    .contact-container {
+        flex-direction: column; /* Xếp dọc 2 cột Contact */
+        padding: 40px 30px;
+        gap: 30px;
+    }
+    .contact-details, .contact-form-wrapper {
+        max-width: 100%; /* Cho phép chiếm hết chiều rộng */
+    }
+}
+
+
+/* ========================================================= */
+/* 2. ĐIỆN THOẠI (MOBILE) (<= 600px) */
+/* ========================================================= */
+@media screen and (max-width: 600px) {
+    /* --- HEADER & NAVIGATION --- */
+    header {
+        flex-direction: column;
+        align-items: center; 
+        padding: 15px 10px;
+    }
+    .logo { 
+        margin-bottom: 10px; 
+        font-size: 36px; /* Giảm kích thước logo */
+    }
+    /* Các liên kết Nav quá nhiều trên mobile, cần thu gọn */
+    nav a { 
+        padding: 8px 5px; 
+        font-size: 0.8em; 
+    }
+
+    /* --- INTRO SECTION --- */
+    .box {
+        flex-direction: column; 
+        text-align: center; 
+        padding: 20px 10px; 
+        max-width: 98%; 
+        gap: 20px; 
+    }
+    
+    .intro-content {
+        flex-direction: column; /* Xếp dọc Avatar và Text */
+        gap: 20px;
+    }
+    
+    /* Giảm kích thước ảnh đại diện cho mobile */
+    .avatar {
+        width: 150px; 
+        height: 150px;
+    }
+
+    /* --- TEXT & BUTTONS --- */
+    .header-text { text-align: center; }
+    
+    .header-text h1 { font-size: 1.8em; margin-bottom: 5px;}
+    .header-text h2 { font-size: 1.4em; margin-bottom: 15px;}
+
+    .end-intro {
+        flex-direction: column; /* Xếp dọc nút Download và Social */
+        gap: 15px;
+        align-items: center;
+    }
+
+    .btn-downloadcv {
+        width: 100%;
+        max-width: 250px; /* Giới hạn chiều rộng nút */
+        margin-right: 0;
+    }
+
+    .social-links {
+        justify-content: center;
+        width: 100%;
+    }
+
+    /* Giảm kích thước font cho các phần tử nhỏ hơn */
+    .box ul li, .basic-info table td {
+        font-size: 1em;
+    }
+
+    /* Ẩn các đoạn text quá dài nếu cần */
+    div > p {
+        font-size: 1.4em;
+    }
+}

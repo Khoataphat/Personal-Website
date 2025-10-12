@@ -1,0 +1,47 @@
+@keyframes runInAndOut {
+    0% {
+        transform: translateX(-100%); /* Bắt đầu từ ngoài bên trái */
+        opacity: 0;
+    }
+    50% {
+        transform: translateX(0); /* Chạy vào giữa và hiện ra */
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(100%); /* Chạy ra ngoài bên phải */
+        opacity: 0;
+    }
+}
+
+/* Trong style.css */
+.header-text h1 strong {
+    display: inline-block; /* Quan trọng! Cho phép transform hoạt động */
+    animation: runInAndOut 5s infinite ease-in-out;
+}
+
+/* 1. Trạng thái chung của hiệu ứng */
+#swup {
+    /* Đảm bảo chuyển động mượt mà */
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out; 
+}
+
+/* 2. Hiệu ứng OUT (Trang cũ biến mất) */
+/* Thẻ main#swup sẽ có class .is-leaving khi chuyển đi */
+#swup.is-leaving {
+    opacity: 0; /* Trang cũ mờ dần */
+    transform: translateY(10px); /* Kèm hiệu ứng dịch chuyển xuống nhẹ */
+}
+
+/* 3. Hiệu ứng IN (Trang mới xuất hiện) */
+/* Trang mới tải vào sẽ bắt đầu với trạng thái này */
+#swup.is-animating #swup.is-entering {
+    opacity: 0; /* Bắt đầu với độ mờ 0 */
+    transform: translateY(-10px); /* Bắt đầu từ phía trên */
+}
+
+/* 4. Trạng thái Kết thúc (Trang mới đã xuất hiện) */
+/* Đôi khi cần reset lại các thuộc tính sau khi transition kết thúc */
+#swup:not(.is-leaving) {
+    opacity: 1;
+    transform: translateY(0);
+}

@@ -1,0 +1,15 @@
+/* ========================================================= */
+/* 1. CSS Variables (Custom Properties) - Dùng Bảng Màu Mới */
+/* ========================================================= */
+:root {
+    /* MÀU CHỦ ĐẠO TỪ AVATAR */
+    --primary-green: #17B43F;   /* Xanh Lá Nổi Bật (Nút/Viền Contact) */
+    --secondary-blue: #1A73E8;  /* Xanh Dương (Màu Nhấn/Hover/Viền Avatar) */
+    --hover-green: #148f32;     /* Xanh Lá Đậm hơn khi hover */
+    
+    /* MÀU NỀN & VĂN BẢN */
+    --background-light: #FFFFFF;
+    --text-dark: #2C3E50;
+    --text-light: #ECF0F1;
+}
+

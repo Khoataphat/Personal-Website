@@ -1,29 +1,5 @@
-/* ========================================================= */
-/* 1. CSS Variables (Custom Properties) - Dùng Bảng Màu Mới */
-/* ========================================================= */
-:root {
-    /* MÀU CHỦ ĐẠO TỪ AVATAR */
-    --primary-green: #17B43F;   /* Xanh Lá Nổi Bật (Nút/Viền Contact) */
-    --secondary-blue: #1A73E8;  /* Xanh Dương (Màu Nhấn/Hover/Viền Avatar) */
-    --hover-green: #148f32;     /* Xanh Lá Đậm hơn khi hover */
-    
-    /* MÀU NỀN & VĂN BẢN */
-    --background-light: #FFFFFF;
-    --text-dark: #2C3E50;
-    --text-light: #ECF0F1;
-}
-
-/* ========================================================= */
-/* 2. Global Styles & Body */
-/* ========================================================= */
-body {
-    font-family: 'Arial', sans-serif;
-    margin: 0;
-    padding: 0;
-    min-height: 100vh; 
-    background-color: var(--background-light); /* Nền Body Trắng Sạch */
-    background-attachment: fixed; 
-}
+@import 'css/base/_variables.css';
+@import 'css/base/_global.css';
 
 /* ========================================================= */
 /* 3. Header Styling */
@@ -109,7 +85,7 @@ main {
     /* Áp dụng Ảnh Nền với lớp phủ nhẹ */
     background-image: 
         linear-gradient(rgba(0, 0, 0, 0.01), rgba(0, 0, 0, 0.01)), /* Lớp phủ rất nhẹ */
-        url('/asset/background.jpg'); 
+        url('../asset/background.jpg'); 
 }
 
 section {
@@ -142,11 +118,15 @@ section {
     text-align: center; /* Căn giữa chữ */
     gap: 20px; /* Khoảng cách giữa các phần tử */
 }
+
 .intro-content {
     display: flex;
     align-items: center;
     gap: 40px;
     width: 100%; /* Đảm bảo nó dùng hết chiều rộng */
+}
+.intro-content > p{
+    text-align: justify;
 }
 /* ========================================================= */
 /* 7. Image and Text */
@@ -194,7 +174,8 @@ section {
 }
 .box .basic-info,
 .box .skills,
-.box .hobbies {
+.box .hobbies,
+.box .goals {
     /* Đảm bảo các khối không co lại quá mức và có chiều rộng hợp lý */
     width: 100%;
     max-width: 400px; /* Chiều rộng tối đa cho mỗi khối */
@@ -204,6 +185,126 @@ section {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); /* Thêm bóng đổ nhẹ */
 }
 
+.basic-info table {
+    /* Đảm bảo bảng sử dụng toàn bộ chiều rộng có sẵn */
+    width: 100%; 
+    /* Thu gọn viền giữa các ô */
+    border-collapse: collapse; 
+    /* Đặt khoảng cách giữa các hàng nếu cần, tùy thuộc vào layout bạn đang dùng */
+    margin-top: 50px;
+}
+
+.basic-info table td {
+    /* Đảm bảo có khoảng đệm giữa các ô */
+    padding: 8px 0; 
+    /* Loại bỏ viền nếu không cần */
+    border-bottom: 1px solid #eee; 
+}
+
+.basic-info table tr:last-child td {
+    /* Loại bỏ viền ở hàng cuối cùng */
+    border-bottom: none; 
+}
+
+/* Căn chỉnh cột đầu tiên (chứa tiêu đề: Name, Age,...) */
+.basic-info table tr td:first-child {
+    /* Đặt chiều rộng cố định hoặc tối thiểu cho cột tiêu đề */
+    width: 35%; 
+    /* Căn lề phải để gần cột giá trị */
+    text-align: left; 
+    /* Thêm khoảng đệm bên phải để có khoảng cách giữa dấu ':' và giá trị */
+    padding-right: 15px;
+    /* Giữ màu chữ giống nhau cho cả tiêu đề (<strong>) và giá trị */
+    color: var(--text-dark); 
+}
+
+/* Căn chỉnh cột thứ hai (chứa giá trị: Pham Tuan Dang Khoa, 22,...) */
+.basic-info table tr td:last-child {
+    /* Căn lề trái cho các giá trị */
+    text-align: left;
+    font-weight: 500;
+}
+.skills ul {
+    /* Loại bỏ dấu chấm tròn mặc định của danh sách */
+    list-style: none;
+    
+    /* Xóa padding mặc định của ul để các item bắt đầu từ lề trái */
+    padding: 0;
+    
+    /* 1. Kích hoạt Flexbox cho danh sách */
+    display: flex;
+    
+    /* 2. Sắp xếp các mục theo chiều dọc */
+    flex-direction: column;
+    
+    /* 3. Căn chỉnh tất cả các mục về phía bên trái */
+    align-items: flex-start;
+    
+    /* (Tùy chọn) Thêm khoảng cách giữa các mục */
+    gap: 10px;
+    margin-left: 35%; /* Đẩy danh sách sang phải để tránh chồng lên icon */
+}
+.hobbies li {
+    display: flex;
+    align-items:left; /* Căn giữa icon và text theo chiều dọc */
+    gap: 10px; /* Khoảng cách giữa icon và text */
+    margin-bottom: 10px; /* Khoảng cách giữa các mục */
+}
+
+/* Định dạng Danh sách (ul) */
+.hobbies ul, .goals ul {
+    list-style: none; /* Loại bỏ dấu chấm tròn mặc định */
+    padding: 0; /* Xóa padding mặc định để căn sát lề trái */
+    margin: 0;
+    margin-top: 30px;
+}
+
+/* Áp dụng Flexbox cho mỗi mục danh sách (li) */
+.hobbies ul li, 
+.goals ul li {
+    padding: 10px 0;
+    line-height: 1.5;
+    color: var(--text-dark);
+    
+    /* BƯỚC 1: Kích hoạt Flexbox cho LI */
+    display: flex; 
+    /* Đảm bảo nội dung căn trên cùng */
+    align-items: baseline;
+    /* Thêm khoảng cách ngang giữa 2 cột: Tiêu đề và Nội dung */
+    gap: 10px; 
+}
+
+/* Định dạng cột tiêu đề phụ (chữ in đậm) */
+.hobbies ul li strong, 
+.goals ul li strong {
+    color: var(--text-dark); 
+    /* BƯỚC 2: Cố định chiều rộng cho cột tiêu đề */
+    /* Điều chỉnh giá trị 120px này nếu chữ bị tràn */
+    min-width: 120px; 
+    /* Căn lề phải cho cột tiêu đề để dấu ":" sát nội dung */
+    text-align: left; 
+    /* Thêm khoảng đệm bên phải nếu muốn thêm khoảng cách giữa tiêu đề và dấu ":" */
+    padding-right: 5px; 
+}
+.hobbies p, .goals p {
+    margin: 0; /* Xóa margin mặc định của đoạn văn */
+    color: var(--text-dark);
+    line-height: 1.6;
+    text-align: justify; /* Căn đều hai bên cho đoạn văn */
+}  
+/* Định dạng Danh sách (ul) */
+.hobbies ul, .goals ul {
+    list-style: none; 
+    padding: 0; 
+    margin: 0; 
+    
+    /* BỔ SUNG ĐỂ CĂN GIỮA */
+    max-width: 550px; /* 1. Đặt chiều rộng tối đa cho danh sách */
+    margin-left: auto;  /* 2. Căn lề trái tự động */
+    margin-right: auto; /* 3. Căn lề phải tự động (ĐẨY KHỐI VÀO GIỮA) */
+    margin-bottom: auto; /* Khoảng cách dưới cùng */
+    margin-top: 30px; /* Giữ lại margin-top đã có */
+}
 /* Tạo container để 2 hoặc 3 khối dưới cùng xếp ngang nhau */
 .info-group {
     display: flex;
@@ -331,6 +432,10 @@ section {
     margin-bottom: 20px;
 }
 
+.project-card > p{
+    text-align: justify;
+}
+
 .project-card:hover {
     /* Khi người dùng rê chuột vào */
     transform: translateY(-5px); /* Nhấc box lên 5px (tạo cảm giác 3D) */
@@ -350,6 +455,67 @@ section {
     color: var(--text-dark);
     line-height: 1.6;
     margin-bottom: 20px;
+    margin-left: 35px;
+}
+.project-card p, .project-card li, .project-card dd {
+    font-size: 1em;
+    line-height: 1.6;
+    color: #444;
+}
+/* Danh sách lệnh Git (key-commands) */
+.project-card ul, .project-card dl {
+    list-style-type: none; /* Bỏ dấu chấm mặc định */
+    padding-left: 0;
+    margin-bottom: 20px;
+}
+
+.project-card ul li, .project-card dd {
+    background-color: #f7f9fc; /* Nền nhẹ cho mỗi mục */
+    margin-bottom: 8px;
+    padding: 10px 15px;
+    border-radius: 6px;
+    border-left: 3px solid #007bff;
+    font-family: monospace; /* Font monospace cho code */
+}
+
+/* Thiết lập cho Danh sách Định nghĩa (Bài 2) */
+.project-card dl {
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    border-radius: 8px;
+}
+.project-card dt {
+    font-weight: bold;
+    color: #333;
+    margin-top: 10px;
+}
+.project-card dd {
+    margin-left: 20px;
+    border-left: none; /* Bỏ border left ở đây để khác với list */
+    background-color: transparent;
+    padding: 5px 0;
+    font-family: inherit;
+}
+/* Tiêu đề phụ trong card (h4) */
+.project-card h4 {
+    font-size: 1.15em;
+    color: #333;
+    margin-top: 25px;
+    margin-bottom: 15px;
+    font-weight: 700;
+    /* Thêm gạch chân nhẹ */
+    text-decoration: underline;
+    text-decoration-color: #cee2f9;
+    text-underline-offset: 4px;
+}
+
+.project-image {
+    width: 90%; /* Chiếm 90% chiều rộng khung chứa */
+    max-height: 500px; /* Giới hạn chiều cao tối đa */
+    object-fit: cover; /* Cắt ảnh nếu cần để vừa khung */
+    border-radius: 10px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 /* ========================================================= */
 /* 9. Footer */
@@ -430,8 +596,14 @@ div > p{
     color: var(--primary-green);
     font-size: 1.5em;
     margin-right: 15px;
-    width: 30px; /* Cố định chiều rộng icon */
+    width: 30px; 
     text-align: center;
+    /* Dòng này giúp căn icon thẳng với văn bản chính xác hơn */
+    margin-top: 2px; 
+}
+/* Thêm quy tắc này vào file style.css */
+.info-item p {
+    margin: 0; 
 }
 
 .info-item a {
@@ -510,65 +682,6 @@ div > p{
     transform: translateY(-2px);
 }
 
-/* --- Responsive (Mobile) --- */
-@media screen and (max-width: 850px) {
-    .contact-container {
-        flex-direction: column; /* Chuyển thành xếp dọc trên màn hình nhỏ */
-        padding: 40px 20px;
-    }
+@import 'css/pages/_responsive.css';
 
-    .contact-details, .contact-form-wrapper {
-        max-width: 100%;
-    }
-}
-
-/* ========================================================= */
-/* 10. RESPONSIVE DESIGN (Media Query) */
-/* ========================================================= */
-@media screen and (max-width: 768px) {
-    /* --- 1. HEADER --- */
-    header {
-        flex-direction: column;
-        align-items: center; 
-        padding: 15px 10px;
-    }
-    .logo { margin-bottom: 10px; }
-    nav a { padding: 10px 6px; font-size: 0.9em; }
-
-    /* --- 2. INTRO SECTION --- */
-    .box {
-        flex-direction: column; 
-        text-align: center; 
-        padding: 20px 10px; 
-        max-width: 95%; 
-        gap: 20px; 
-    }
-    .avatar {
-        width: 150px; /* Giảm kích thước ảnh đại diện cho mobile */
-        height: 150px;
-    }
-    
-    /* --- 3. TEXT & BUTTONS --- */
-    .header-text { text-align: center; }
-    
-    .header-text h1 { font-size: 1.8em; margin-bottom: 10px;}
-    .header-text h2 { font-size: 1.4em; margin-bottom: 15px;}
-
-    .end-intro {
-        flex-direction: column; 
-        gap: 15px;
-        align-items: center; /* Căn giữa theo chiều ngang khi xếp dọc */
-    }
-
-    .btn-downloadcv {
-        width: 100%;
-        max-width: 280px; /* Giới hạn chiều rộng nút */
-        margin-right: 0;
-    }
-
-    .social-links {
-        display: flex;
-        justify-content: center;
-        width: 100%;
-    }
-}
+@import 'css/abstract/_animations.css';
