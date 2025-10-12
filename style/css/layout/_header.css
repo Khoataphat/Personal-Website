@@ -92,3 +92,61 @@ section {
     align-items: center; 
     padding: 20px;
 }
+
+/* ========================================================= */
+/* 4. Navigation Links */
+/* ========================================================= */
+nav a {
+    display: inline-block;
+    color: var(--text-dark); 
+    text-align: center;
+    padding: 10px 20px;
+    text-decoration: none; 
+    font-weight: 500;
+    border: 2px solid transparent; 
+    border-radius: 20px;
+    transition: all 0.3s ease; /* Chuyển động mượt mà cho cả màu và viền */
+}
+
+nav a:hover {
+    color: var(--secondary-blue); /* Hover màu Xanh Dương */
+    border-color: var(--secondary-blue); /* Viền màu Xanh Dương khi hover */
+    background-color: transparent;
+}
+
+
+
+/* ========================================================= */
+/* 3. Header Styling */
+/* ========================================================= */
+header {
+    padding: 15px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Áp dụng màu nền Trắng Sạch cho Header */
+    background-color: var(--background-light); 
+    position: sticky; 
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+.logo {
+    /* THAY ĐỔI Ở ĐÂY */
+    font-family: 'Dancing Script', cursive; 
+    
+    font-size: 48px;
+    /* Font thư pháp thường có nét đậm riêng, nên có thể điều chỉnh font-weight */
+    font-weight: 700; /* Đổi thành 700 hoặc 400 tùy theo sở thích */
+    
+    color: var(--text-dark); 
+    letter-spacing: 1px;
+    text-transform: uppercase; /* Lưu ý: Các font thư pháp có thể trông không đẹp khi viết HOA */
+    cursor: pointer;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.logo:hover {
+    color: var(--secondary-blue); /* Hover màu Xanh Dương */
+    transform: scale(1.05);
+}

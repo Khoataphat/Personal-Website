@@ -1,0 +1,126 @@
+/* ========================================================= */
+/* 9. CONTACT PAGE STYLING (Thêm mới) */
+/* ========================================================= */
+
+.contact-container {
+    display: flex;
+    gap: 50px;
+    align-items: flex-start; /* Căn trên cùng */
+    padding: 60px;
+}
+
+.contact-details, .contact-form-wrapper {
+    flex: 1; /* Chia đều không gian 50/50 */
+    max-width: 50%;
+}
+
+/* --- CONTACT DETAILS (Cột Trái) --- */
+.contact-details h3 {
+    color: var(--secondary-blue);
+    border-bottom: 2px solid var(--primary-green);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.contact-details p {
+    line-height: 1.6;
+    margin-bottom: 30px;
+    font-size: 1.1em;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+.info-item i {
+    color: var(--primary-green);
+    font-size: 1.5em;
+    margin-right: 15px;
+    width: 30px; 
+    text-align: center;
+    /* Dòng này giúp căn icon thẳng với văn bản chính xác hơn */
+    margin-top: 2px; 
+}
+/* Thêm quy tắc này vào file style.css */
+.info-item p {
+    margin: 0; 
+}
+
+.info-item a {
+    color: var(--text-dark);
+    text-decoration: none;
+}
+
+/* --- SOCIAL LINKS --- */
+.contact {
+    margin-top: 30px;
+}
+
+.contact a {
+    color: var(--secondary-blue);
+    font-size: 2em;
+    margin-right: 20px;
+    transition: color 0.3s;
+}
+
+.contact a:hover {
+    color: var(--primary-green);
+}
+
+/* --- CONTACT FORM (Cột Phải) --- */
+.contact-form-wrapper h3 {
+    color: var(--secondary-blue);
+    border-bottom: 2px solid var(--primary-green);
+    padding-bottom: 10px;
+    margin-bottom: 25px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.contact-form label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: var(--text-dark);
+}
+
+.contact-form input[type="text"],
+.contact-form input[type="email"],
+.contact-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1em;
+    box-sizing: border-box; /* Tính padding vào width */
+    transition: border-color 0.3s;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+    border-color: var(--secondary-blue);
+    outline: none;
+}
+
+.btn-submit {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    background-color: var(--primary-green);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.btn-submit:hover {
+    background-color: var(--hover-green);
+    transform: translateY(-2px);
+}

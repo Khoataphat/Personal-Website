@@ -1,0 +1,20 @@
+/* ========================================================= */
+/* 9. Footer */
+/* ========================================================= */
+footer {
+    text-align: center;
+    padding: 15px;
+    color: var(--text-light); /* Chữ màu xám nhạt */
+    background-color: var(--text-dark); /* Nền tối để tương phản */
+    position: relative;
+    z-index: 999;
+}
+
+
+.info {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 10px 0;
+    margin-top: 40px;
+    align-items: center;
+}

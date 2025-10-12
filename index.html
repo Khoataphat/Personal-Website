@@ -32,7 +32,7 @@
                     <img src="asset/avatar.png" alt="Avatar" class="avatar">
                 </div>
                 <div class="header-text">
-                    <h1>Hi! I am <strong>Dang Khoa</strong></h1>
+                    <h1>Hi! I am <strong class="auto-type">Dang Khoa</strong></h1>
                     <h2>I am Developer</h2>
                     <p>Welcome to my personal website.</p>
                     <div class="end-intro">
@@ -57,8 +57,16 @@
     <footer>
         <p>&copy; 2024 Đang Khoa. All rights reserved.</p>
     </footer>
-    <script src="https://unpkg.com/swup@latest/dist/swup.min.js"></script> 
-    <script src="script/main.js"></script>
+    <script src="https://unpkg.com/swup@latest/dist/swup.min.js"></script>
+    <script src="https://unpkg.com/typed.js@2.1.0/dist/typed.umd.js"></script>
+    <script>
+        const typed = new Typed('.auto-type', {
+            strings: ['Dang Khoa'],
+            typeSpeed: 100,
+            backSpeed: 100,
+            loop: true
+        });
+    </script>
 </body>
 
 </html>

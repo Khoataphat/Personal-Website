@@ -1,0 +1,30 @@
+/* Nút Contact (Viền Nổi Bật) */
+.nav-contact {
+    /* Đặt lại thuộc tính viền cố định, nhưng đổi màu chữ */
+    border: 2px solid var(--primary-green);
+    color: var(--primary-green); /* Chữ màu xanh lá */
+    background-color: transparent; /* Đảm bảo nền trong suốt */
+}
+
+.nav-contact:hover {
+    /* Đổi nền khi hover */
+    background-color: var(--primary-green);
+    color: var(--text-light); /* Chữ trắng trên nền xanh lá */
+    border-color: var(--primary-green);
+}
+
+.btn-downloadcv {
+    padding: 12px 25px;
+    background-color: var(--primary-green); /* Nút màu Xanh Lá Nổi Bật */
+    color: white;
+    border: none;
+    border-radius: 30px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-downloadcv:hover {
+    background-color: var(--hover-green); /* Hover màu Xanh Lá Đậm */
+}

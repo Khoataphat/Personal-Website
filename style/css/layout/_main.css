@@ -1,0 +1,418 @@
+/* ========================================================= */
+/* 5. Main Content Layout */
+/* ========================================================= */
+main {
+    flex-grow: 1; 
+    background-position: center center; 
+    background-repeat: no-repeat; 
+    background-size: cover; 
+    
+    /* Áp dụng Ảnh Nền với lớp phủ nhẹ */
+    background-image: 
+        linear-gradient(rgba(0, 0, 0, 0.01), rgba(0, 0, 0, 0.01)), /* Lớp phủ rất nhẹ */
+        url('../../../asset/background.jpg'); 
+}
+
+section {
+    min-height: calc(100vh - 80px); 
+    display: flex;
+    justify-content: center; 
+    align-items: center; 
+    padding: 20px;
+}
+
+/* ========================================================= */
+/* 6. Intro Section Styling */
+/* ========================================================= */
+.box {
+    max-width: 1200px;
+    min-width: 860px; 
+    padding: 40px;
+    background-color: rgba(255, 255, 255, 0.95); /* Nền Trắng Sạch */
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 40px; 
+    text-align: left;
+    margin: 0; 
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+.about-me{
+    flex-direction: column; /* Xếp dọc */
+    text-align: center; /* Căn giữa chữ */
+    gap: 20px; /* Khoảng cách giữa các phần tử */
+}
+
+.intro-content {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    width: 100%; /* Đảm bảo nó dùng hết chiều rộng */
+}
+.intro-content > p{
+    text-align: justify;
+}
+/* ========================================================= */
+/* 7. Image and Text */
+/* ========================================================= */
+.avatar {
+    width: 250px; 
+    height: 250px;
+    border-radius: 50%;
+    object-fit: cover;
+    /* Viền ảnh đại diện màu Xanh Dương */
+    border: 5px solid var(--secondary-blue); 
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.avatar2 {
+    width: 420px; 
+    height: 420px;
+    border-radius: 25%;
+    object-fit: cover;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    
+    /* 1. Thêm padding để tạo khoảng trống cho "viền" */
+    padding: 5px; /* Độ dày của viền gradient */
+    
+    /* 2. Áp dụng gradient làm background */
+    background: linear-gradient(to right, #38ef7d, #11998e); /* Màu gradient */
+    
+    /* 3. Dùng background-clip để CẮT background, chỉ giữ lại phần padding */
+    background-clip: padding-box; 
+}
+
+
+.box .basic-info,
+.box .skills,
+.box .hobbies,
+.box .goals {
+    /* Đảm bảo các khối không co lại quá mức và có chiều rộng hợp lý */
+    width: 100%;
+    max-width: 400px; /* Chiều rộng tối đa cho mỗi khối */
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.1); /* Thêm viền nhẹ */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); /* Thêm bóng đổ nhẹ */
+}
+
+.basic-info table {
+    /* Đảm bảo bảng sử dụng toàn bộ chiều rộng có sẵn */
+    width: 100%; 
+    /* Thu gọn viền giữa các ô */
+    border-collapse: collapse; 
+    /* Đặt khoảng cách giữa các hàng nếu cần, tùy thuộc vào layout bạn đang dùng */
+    margin-top: 50px;
+}
+
+.basic-info table td {
+    /* Đảm bảo có khoảng đệm giữa các ô */
+    padding: 8px 0; 
+    /* Loại bỏ viền nếu không cần */
+    border-bottom: 1px solid #eee; 
+}
+
+.basic-info table tr:last-child td {
+    /* Loại bỏ viền ở hàng cuối cùng */
+    border-bottom: none; 
+}
+
+/* Căn chỉnh cột đầu tiên (chứa tiêu đề: Name, Age,...) */
+.basic-info table tr td:first-child {
+    /* Đặt chiều rộng cố định hoặc tối thiểu cho cột tiêu đề */
+    width: 35%; 
+    /* Căn lề phải để gần cột giá trị */
+    text-align: left; 
+    /* Thêm khoảng đệm bên phải để có khoảng cách giữa dấu ':' và giá trị */
+    padding-right: 15px;
+    /* Giữ màu chữ giống nhau cho cả tiêu đề (<strong>) và giá trị */
+    color: var(--text-dark); 
+}
+
+/* Căn chỉnh cột thứ hai (chứa giá trị: Pham Tuan Dang Khoa, 22,...) */
+.basic-info table tr td:last-child {
+    /* Căn lề trái cho các giá trị */
+    text-align: left;
+    font-weight: 500;
+}
+.skills ul {
+    /* Loại bỏ dấu chấm tròn mặc định của danh sách */
+    list-style: none;
+    
+    /* Xóa padding mặc định của ul để các item bắt đầu từ lề trái */
+    padding: 0;
+    
+    /* 1. Kích hoạt Flexbox cho danh sách */
+    display: flex;
+    
+    /* 2. Sắp xếp các mục theo chiều dọc */
+    flex-direction: column;
+    
+    /* 3. Căn chỉnh tất cả các mục về phía bên trái */
+    align-items: flex-start;
+    
+    /* (Tùy chọn) Thêm khoảng cách giữa các mục */
+    gap: 10px;
+    margin-left: 35%; /* Đẩy danh sách sang phải để tránh chồng lên icon */
+}
+.hobbies li {
+    display: flex;
+    align-items:left; /* Căn giữa icon và text theo chiều dọc */
+    gap: 10px; /* Khoảng cách giữa icon và text */
+    margin-bottom: 10px; /* Khoảng cách giữa các mục */
+}
+
+/* Định dạng Danh sách (ul) */
+.hobbies ul, .goals ul {
+    list-style: none; /* Loại bỏ dấu chấm tròn mặc định */
+    padding: 0; /* Xóa padding mặc định để căn sát lề trái */
+    margin: 0;
+    margin-top: 30px;
+}
+
+/* Áp dụng Flexbox cho mỗi mục danh sách (li) */
+.hobbies ul li, 
+.goals ul li {
+    padding: 10px 0;
+    line-height: 1.5;
+    color: var(--text-dark);
+    
+    /* BƯỚC 1: Kích hoạt Flexbox cho LI */
+    display: flex; 
+    /* Đảm bảo nội dung căn trên cùng */
+    align-items: baseline;
+    /* Thêm khoảng cách ngang giữa 2 cột: Tiêu đề và Nội dung */
+    gap: 10px; 
+}
+
+/* Định dạng cột tiêu đề phụ (chữ in đậm) */
+.hobbies ul li strong, 
+.goals ul li strong {
+    color: var(--text-dark); 
+    /* BƯỚC 2: Cố định chiều rộng cho cột tiêu đề */
+    /* Điều chỉnh giá trị 120px này nếu chữ bị tràn */
+    min-width: 120px; 
+    /* Căn lề phải cho cột tiêu đề để dấu ":" sát nội dung */
+    text-align: left; 
+    /* Thêm khoảng đệm bên phải nếu muốn thêm khoảng cách giữa tiêu đề và dấu ":" */
+    padding-right: 5px; 
+}
+.hobbies p, .goals p {
+    margin: 0; /* Xóa margin mặc định của đoạn văn */
+    color: var(--text-dark);
+    line-height: 1.6;
+    text-align: justify; /* Căn đều hai bên cho đoạn văn */
+}  
+/* Định dạng Danh sách (ul) */
+.hobbies ul, .goals ul {
+    list-style: none; 
+    padding: 0; 
+    margin: 0; 
+    
+    /* BỔ SUNG ĐỂ CĂN GIỮA */
+    max-width: 550px; /* 1. Đặt chiều rộng tối đa cho danh sách */
+    margin-left: auto;  /* 2. Căn lề trái tự động */
+    margin-right: auto; /* 3. Căn lề phải tự động (ĐẨY KHỐI VÀO GIỮA) */
+    margin-bottom: auto; /* Khoảng cách dưới cùng */
+    margin-top: 30px; /* Giữ lại margin-top đã có */
+}
+/* Tạo container để 2 hoặc 3 khối dưới cùng xếp ngang nhau */
+.info-group {
+    display: flex;
+    justify-content: space-between; /* Đẩy các khối ra hai bên */
+    gap: 20px;
+    width: 100%;
+    max-width: 1000px; /* Giới hạn chiều rộng container nhóm */
+    margin-top: 20px;
+    flex-wrap: wrap; /* Cho phép các khối xuống dòng khi màn hình nhỏ */
+}
+/* Thiết lập kích thước cho container chứa CV */
+.cv {
+    /* Quan trọng: Dùng flexbox để căn giữa nội dung (iframe) */
+    display: flex;
+    justify-content: center;
+    align-items: center; 
+    flex-direction: column;
+    
+    max-width: 1000px; 
+    margin: 40px auto; 
+    padding: 0; /* Xóa padding để iframe sát cạnh (tùy chọn) */
+    
+    /* Các style box khác (background, shadow) */
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Thiết lập cho IFRAME */
+.cv iframe {
+    /* Xóa các thuộc tính width/height nếu bạn đã đặt trong HTML, 
+       hoặc đặt chúng ở đây */
+    border: none;
+    display: block; /* Quan trọng để tránh lỗi khoảng trắng */
+    
+    /* Đảm bảo không bị giới hạn chiều rộng/cao bởi CSS bên ngoài */
+    /* width và height đã được đặt trong HTML để dễ kiểm soát hơn */
+}
+/* Style cho tiêu đề và danh sách */
+.box h2, .box h3 {
+    color: var(--secondary-blue); /* Tiêu đề màu xanh nổi bật */
+    margin-top: 0;
+    border-bottom: 2px solid var(--primary-green); /* Đường viền dưới cho tiêu đề */
+    padding-bottom: 5px;
+    margin-bottom: 15px;
+}
+
+.box ul {
+    list-style: none;
+    padding: 0;
+}
+
+.box ul li {
+    padding: 5px 0;
+    font-size: 1.1em;
+    color: var(--text-dark);
+}
+
+.box ul li i {
+    color: var(--primary-green); /* Icon màu xanh lá */
+    margin-right: 10px;
+}
+
+/* Style cho bảng thông tin */
+.basic-info table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.basic-info table td {
+    padding: 5px 0;
+    font-size: 1.1em;
+}
+
+/* ========================================================= */
+/* 8. Social Links & Button */
+/* ========================================================= */
+.end-intro {
+    display: flex;
+    align-items: center; 
+    gap: 20px; 
+}
+
+
+
+.social-links a i {
+    font-size: 1.8em;
+    color: var(--text-dark); /* Icon màu tối */
+    transition: color 0.3s;
+    padding: 10px;
+}
+
+.social-links a:hover i {
+    color: var(--secondary-blue); /* Hover icon màu Xanh Dương */
+}
+.project-card {
+    /* 1. Tạo Khung Box Cơ Bản */
+    background-color: var(--background-light); /* Nền trắng bên trong box */
+    padding: 30px;
+    border-radius: 15px; /* Bo tròn các góc */
+    text-align: center;
+    
+    /* 2. Hiệu ứng Khối Nổi */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Bóng đổ nhẹ, làm box nổi lên */
+    
+    /* 3. Viền (Tùy chọn) */
+    border: 1px solid rgba(0, 0, 0, 0.1); /* Viền mỏng màu xám nhẹ */
+    
+    /* 4. Hiệu ứng chuyển động */
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.project-card > p{
+    text-align: justify;
+}
+
+.project-card:hover {
+    /* Khi người dùng rê chuột vào */
+    transform: translateY(-5px); /* Nhấc box lên 5px (tạo cảm giác 3D) */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); /* Bóng đổ đậm hơn khi nhấc lên */
+    border-color: var(--secondary-blue); /* Viền chuyển sang màu xanh nổi bật */
+}
+
+
+/* Style cho nội dung bên trong box */
+.project-card h3 {
+    color: var(--secondary-blue);
+    font-size: 1.5em;
+    margin-top: 0;
+}
+
+.project-card p {
+    color: var(--text-dark);
+    line-height: 1.6;
+    margin-bottom: 20px;
+    margin-left: 35px;
+}
+.project-card p, .project-card li, .project-card dd {
+    font-size: 1em;
+    line-height: 1.6;
+    color: #444;
+}
+/* Danh sách lệnh Git (key-commands) */
+.project-card ul, .project-card dl {
+    list-style-type: none; /* Bỏ dấu chấm mặc định */
+    padding-left: 0;
+    margin-bottom: 20px;
+}
+
+.project-card ul li, .project-card dd {
+    background-color: #f7f9fc; /* Nền nhẹ cho mỗi mục */
+    margin-bottom: 8px;
+    padding: 10px 15px;
+    border-radius: 6px;
+    border-left: 3px solid #007bff;
+    font-family: monospace; /* Font monospace cho code */
+}
+
+/* Thiết lập cho Danh sách Định nghĩa (Bài 2) */
+.project-card dl {
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    border-radius: 8px;
+}
+.project-card dt {
+    font-weight: bold;
+    color: #333;
+    margin-top: 10px;
+}
+.project-card dd {
+    margin-left: 20px;
+    border-left: none; /* Bỏ border left ở đây để khác với list */
+    background-color: transparent;
+    padding: 5px 0;
+    font-family: inherit;
+}
+/* Tiêu đề phụ trong card (h4) */
+.project-card h4 {
+    font-size: 1.15em;
+    color: #333;
+    margin-top: 25px;
+    margin-bottom: 15px;
+    font-weight: 700;
+    /* Thêm gạch chân nhẹ */
+    text-decoration: underline;
+    text-decoration-color: #cee2f9;
+    text-underline-offset: 4px;
+}
+
+.project-image {
+    width: 90%; /* Chiếm 90% chiều rộng khung chứa */
+    max-height: 500px; /* Giới hạn chiều cao tối đa */
+    object-fit: cover; /* Cắt ảnh nếu cần để vừa khung */
+    border-radius: 10px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}

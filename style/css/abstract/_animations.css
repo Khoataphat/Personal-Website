@@ -15,8 +15,9 @@
 
 /* Trong style.css */
 .header-text h1 strong {
+
     display: inline-block; /* Quan trọng! Cho phép transform hoạt động */
-    animation: runInAndOut 5s infinite ease-in-out;
+    /*animation: runInAndOut 5s infinite ease-in-out;*/
 }
 
 /* 1. Trạng thái chung của hiệu ứng */
