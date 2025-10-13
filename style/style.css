@@ -1,15 +1,15 @@
-@import 'css/base/_variables.css';
-@import 'css/base/_global.css';
+@import '/css/base/_variables.css';
+@import '/css/base/_global.css';
 
 
 
-@import 'css/layout/_header.css';
-@import 'css/layout/_button.css';
-@import 'css/layout/_footer.css';
-@import 'css/layout/_main.css';
+@import '/css/layout/_header.css';
+@import '/css/layout/_button.css';
+@import '/css/layout/_footer.css';
+@import '/css/layout/_main.css';
 
-@import 'css/pages/_contact.css';
+@import '/css/pages/_contact.css';
 
-@import 'css/pages/_responsive.css';
+@import '/css/pages/_responsive.css';
 
 /*@import 'css/abstract/_animations.css';*/
