@@ -10,7 +10,7 @@ main {
     /* Áp dụng Ảnh Nền với lớp phủ nhẹ */
     background-image: 
         linear-gradient(rgba(0, 0, 0, 0.01), rgba(0, 0, 0, 0.01)), /* Lớp phủ rất nhẹ */
-        url('../../../asset/background.jpg'); 
+        url('asset/background.jpg'); 
 }
 
 section {
