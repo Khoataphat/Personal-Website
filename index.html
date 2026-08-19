@@ -1,82 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" class="scroll-smooth">
 <head>
-    <base href="Personal-Website">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dang Khoa | Home</title>
-    
-    <meta name="description" content="Trang web cá nhân của Đăng Khoa, chuyên về phát triển Web và thiết kế giao diện. Xem các dự án và thông tin liên hệ.">
-    
-    <link rel="icon" type="image/png" href="asset/favicon.png"> <meta property="og:title" content="Dang Khoa | Developer Portfolio">
-    <meta property="og:description" content="Trang web cá nhân của Đăng Khoa, chuyên về phát triển Web và thiết kế giao diện.">
-    <meta property="og:image" content="asset/social-share-image.jpg"> 
-    <meta property="og:url" content="https://www.dang-khoa.dev/index.html"> 
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  
+  <!-- Primary Meta Tags -->
+  <title>Dang Khoa | Software Engineer & Creative Developer</title>
+  <meta name="title" content="Dang Khoa | Software Engineer & Creative Developer" />
+  <meta name="description" content="Portfolio của Phạm Tuấn Đăng Khoa - Software Engineer chuyên sâu Backend Java/NodeJS, IoT Telemetry, Thuật toán DSA và trải nghiệm web điện ảnh Scrollytelling." />
+  <meta name="keywords" content="Pham Tuan Dang Khoa, Software Engineer, Creative Developer, React, GSAP, Java, Spring Boot, IoT, MQTT, DSA, Portfolio" />
+  <meta name="author" content="Pham Tuan Dang Khoa" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#070709" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-    <link rel="stylesheet" href="style-main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Dang Khoa Portfolio" />
+  <meta property="og:url" content="https://khoataphat.github.io/Personal-Website/" />
+  <meta property="og:title" content="Dang Khoa | Software Engineer & Creative Developer" />
+  <meta property="og:description" content="Khám phá portfolio điện ảnh với các dự án kỹ thuật, kiến trúc phân tán, IoT và kỹ năng lập trình của Đăng Khoa." />
+  <meta property="og:image" content="./asset/avatar.png" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:title" content="Dang Khoa | Software Engineer & Creative Developer" />
+  <meta property="twitter:description" content="Khám phá portfolio điện ảnh với các dự án kỹ thuật, kiến trúc phân tán, IoT và kỹ năng lập trình của Đăng Khoa." />
+  <meta property="twitter:image" content="./asset/avatar.png" />
+
+  <!-- Google Fonts Preconnect & Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
 </head>
-
-<body>
-    <header>
-        <div class="logo">
-            <span>DK.</span>
-        </div>
-        <nav>
-            <a href="index.html">Home</a>
-            <a href="about.html">About</a>
-            <a href="projects.html">Projects</a>
-            <a href="blog.html">Blog</a>
-            <a href="contact.html" class="nav-contact">Contact</a>
-        </nav>
-    </header>
-
-    <main id = "swup">
-        <section>
-            <div class="box">
-
-                <div class="image">
-                    <img src="asset/avatar.png" alt="Avatar" class="avatar">
-                </div>
-                <div class="header-text">
-                    <h1>Hi! I am <strong class="auto-type">Dang Khoa</strong></h1>
-                    <h2>I am Developer</h2>
-                    <p>Welcome to my personal website.</p>
-                    <div class="end-intro">
-                        <a href="cv_page.html" class="btn-downloadcv">Download CV</a>
-                        <div class="social-links">
-                            <a href="https://www.facebook.com/K.onlyone.041003?mibextid=ZbWKwL"><i class="fa-brands fa-facebook"></i></a>
-                            <a href="https://github.com/Khoataphat"><i class="fa-brands fa-github"></i></a>
-                            <a href="#"><i class="fa-brands fa-linkedin"></i></a>
-                            <a href="#"><i class="fa-brands fa-twitter"></i></a>
-                            <a href="#"><i class="fa-brands fa-instagram"></i></a>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-
-        </section>
-
-    </main>
-
-    <footer>
-        <p>&copy; 2024 Đang Khoa. All rights reserved.</p>
-    </footer>
-    <script src="https://unpkg.com/swup@latest/dist/swup.min.js"></script>
-    <script src="https://unpkg.com/typed.js@2.1.0/dist/typed.umd.js"></script>
-    <script>
-        
-        const typed = new Typed('.auto-type', {
-            strings: ['Dang Khoa'],
-            typeSpeed: 100,
-            backSpeed: 100,
-            loop: true
-        });
-    </script>
+<body class="bg-background text-text-main font-sans antialiased selection:bg-primary selection:text-background overflow-x-hidden">
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
 </body>
-
 </html>
