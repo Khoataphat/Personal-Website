@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { getGPUTier } from 'detect-gpu';
 import { useCockpitStore } from '../../store/cockpitStore';
 import { BackgroundMatrix3D } from './BackgroundMatrix3D';
-import { HologramDemoCore } from './HologramDemoCore';
+import { HumanWireframeAvatar } from './HumanWireframeAvatar';
 import { OrbitPanelRing } from './OrbitPanelRing';
 
 function TelemetryTracker() {
@@ -170,8 +170,10 @@ export function CockpitScene({ children }) {
         {/* 3D Background Matrix Environment */}
         <BackgroundMatrix3D particleCount={particleCount} />
 
-        {/* Central Reactor Hologram Core */}
-        <HologramDemoCore scale={0.8} />
+        {/* Central 100% Fidelity Male Humanoid Wireframe Avatar & Scanner Base */}
+        <Suspense fallback={null}>
+          <HumanWireframeAvatar position={[0, -0.9, 0]} scale={1.0} />
+        </Suspense>
 
         {/* Cylindrical 360 Orbit Panel Ring */}
         <OrbitPanelRing />

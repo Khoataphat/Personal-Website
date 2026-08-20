@@ -31,17 +31,20 @@ const fragmentShader = `
   uniform float uOpacity;
 
   void main() {
-    // [1] Fresnel Rim Glow
+    // [1] Smooth Fresnel Rim Glow (power 2.0 for clear silhouette)
     vec3 viewDir = normalize(cameraPosition - vWorldPosition);
-    float fresnel = pow(1.0 - max(0.0, dot(vNormal, viewDir)), 4.0);
+    float NdotV = max(0.0, dot(vNormal, viewDir));
+    float fresnel = pow(1.0 - NdotV, 2.0);
 
-    // [2] Scanline
-    float scanline = (sin(vWorldPosition.y * 30.0 + uTime * 2.0) + 1.0) * 0.5;
-    scanline = mix(0.7, 1.0, scanline);
+    // [2] Scanline Cyber Wave
+    float scanline = (sin(vWorldPosition.y * 30.0 + uTime * 3.0) + 1.0) * 0.5;
+    scanline = mix(0.75, 1.0, scanline);
 
-    // [3] Combine
-    vec3 color = uColor * (fresnel * 2.0 + 0.3) * scanline;
-    gl_FragColor = vec4(color, uOpacity * (fresnel + 0.15));
+    // [3] Combine with strong emissive base and Fresnel edge
+    vec3 color = uColor * (fresnel * 2.2 + 0.7) * scanline;
+    float alpha = uOpacity * (fresnel * 0.65 + 0.45);
+
+    gl_FragColor = vec4(color, alpha);
   }
 `;
 
