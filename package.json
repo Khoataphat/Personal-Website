@@ -11,15 +11,21 @@
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
     "@gsap/react": "^2.1.1",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
+    "@react-three/postprocessing": "^2.19.1",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
+    "detect-gpu": "^5.0.70",
     "gsap": "^3.12.7",
     "howler": "^2.2.4",
     "lenis": "^1.1.20",
     "lucide-react": "^1.16.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "three": "^0.167.1",
+    "zustand": "^4.5.7"
   },
   "devDependencies": {
     "@types/react": "^18.3.18",

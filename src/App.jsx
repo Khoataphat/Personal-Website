@@ -1,53 +1,34 @@
 import React from 'react';
-import { useSmoothScroll } from './hooks/useSmoothScroll';
+import { useCockpitStore } from './store/cockpitStore';
+import { CockpitScene } from './components/cockpit/CockpitScene';
 import CustomCursor from './components/common/CustomCursor';
-import GlowMesh from './components/background/GlowMesh';
-import ParticleField from './components/background/ParticleField';
-import Navbar from './components/common/Navbar';
-import Footer from './components/common/Footer';
-import Hero from './components/sections/Hero';
-import AboutStory from './components/sections/AboutStory';
-import TechArsenal from './components/sections/TechArsenal';
-import ProjectsShowcase from './components/sections/ProjectsShowcase';
-import BlogSection from './components/sections/BlogSection';
-import ContactTransmission from './components/sections/ContactTransmission';
 
 export default function App() {
-  useSmoothScroll();
+  const displayMode = useCockpitStore((s) => s.displayMode);
 
   return (
-    <div className="relative min-h-screen bg-background text-text-main overflow-hidden flex flex-col justify-between selection:bg-primary selection:text-background">
-      {/* Dynamic Visual FX */}
+    <div className="relative w-screen h-screen bg-[#070709] text-text-main overflow-hidden select-none">
+      {/* Custom Cyber Cursor */}
       <CustomCursor />
-      <GlowMesh />
-      <ParticleField />
 
-      {/* Main Header / Navigation */}
-      <Navbar />
+      {/* 3D Cybernetic Cockpit Universe */}
+      {displayMode === '3d' && (
+        <CockpitScene>
+          {/* Future phase components (Orbit ring, Avatar, Interactive Panels) will be injected here */}
+        </CockpitScene>
+      )}
 
-      {/* Content Container */}
-      <main className="relative z-10 flex-grow pt-20">
-        {/* Scene 1: The Prologue (Hero Section) */}
-        <Hero />
-
-        {/* Scene 2: The Origin & Journey (About Scrollytelling) */}
-        <AboutStory />
-
-        {/* Scene 3: The Arsenal (Tech Stack Bento Grid) */}
-        <TechArsenal />
-
-        {/* Scene 4: Key Operations (Featured Projects Showcase) */}
-        <ProjectsShowcase />
-
-        {/* Scene 5: The Chronicles (Engineering Tech Notes) */}
-        <BlogSection />
-
-        {/* Scene 6: Transmission Terminal (Contact & CV Download) */}
-        <ContactTransmission />
-      </main>
-
-      {/* Main Footer */}
-      <Footer />
+      {/* Minimal HUD Header Overlay for Phase 1 */}
+      <div className="fixed top-6 left-6 z-20 pointer-events-none font-mono text-xs text-primary/80 flex flex-col gap-1 tracking-widest uppercase">
+        <div className="flex items-center gap-2">
+          <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <span>CYBERNETIC COCKPIT v2.0 // PHASE 1: 3D SCENE</span>
+        </div>
+        <div className="text-[10px] text-text-muted">
+          STATUS: MATRIX ONLINE · SHADER PIPELINE ACTIVE · POSTPROCESSING GLOW
+        </div>
+      </div>
     </div>
   );
 }
+
