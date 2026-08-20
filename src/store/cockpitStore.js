@@ -19,6 +19,11 @@ export const useCockpitStore = create((set) => ({
   isAudioMuted: false,
   toggleMute: () => set((s) => ({ isAudioMuted: !s.isAudioMuted })),
 
+  // Free-Cam Mode (Inspection controls)
+  isFreeCamActive: false,
+  toggleFreeCam: () => set((s) => ({ isFreeCamActive: !s.isFreeCamActive })),
+  setFreeCam: (val) => set({ isFreeCamActive: val }),
+
   // Telemetry (updated by HUD component)
   telemetry: { fps: 60, latency: 0, utcClock: '' },
   setTelemetry: (t) => set({ telemetry: t }),

@@ -21,6 +21,9 @@ export function useSmoothScroll() {
     });
 
     lenisRef.current = lenis;
+    if (typeof window !== 'undefined') {
+      window.__lenis = lenis;
+    }
 
     // Connect Lenis to GSAP ScrollTrigger
     lenis.on('scroll', ScrollTrigger.update);
