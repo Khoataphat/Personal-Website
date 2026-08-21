@@ -37,13 +37,19 @@ function TelemetryTracker() {
 }
 
 /**
+ * Keyboard Orbit Controls Toggle
+ * Set to `true` whenever you want to re-enable interactive WASD & QE inspection controls.
+ */
+const ENABLE_KEYBOARD_CONTROLS = false;
+
+/**
  * Hero Camera Rig
  *
- * WASD & QE Inspection Orbit Controls:
+ * Cinematic Sovereign Low-Angle 3/4 Lock with Subtle Mouse Parallax.
+ * Preserves full WASD & QE inspection orbit controls via `ENABLE_KEYBOARD_CONTROLS` toggle flag:
  *   - A / D (or ArrowLeft / ArrowRight): Horizontal 360° Orbit (Azimuth angle)
  *   - W / S (or ArrowUp / ArrowDown): Vertical Height / Pitch Angle (Polar angle)
  *   - Q / E (or PageUp / PageDown): Zoom In / Zoom Out (Distance radius)
- *   - Clean stationary focal target at (0, 0.02, 0)
  */
 function HeroCameraRig() {
   const keysRef = useRef({
@@ -55,13 +61,19 @@ function HeroCameraRig() {
     e: false,
   });
 
+  // Sovereign Low-Angle 3/4 Cinematic Lock
+  // phi = Math.PI * 0.54 (subtly tilted upwards towards mask for an imposing royal presence)
+  // theta = -0.22 (~12.6° subtle 3/4 angle showcasing chest, mask facets, and singularity core)
+  // radius = 1.90 (close-up cinematic framing)
   const sphericalRef = useRef({
-    radius: 1.95,
-    phi: Math.PI / 2, // 90° (eye level)
-    theta: 0,         // front facing
+    radius: 1.90,
+    phi: Math.PI * 0.54,
+    theta: -0.22,
   });
 
   useEffect(() => {
+    if (!ENABLE_KEYBOARD_CONTROLS) return;
+
     const handleKeyDown = (e) => {
       const key = e.key.toLowerCase();
       if (key === 'w' || key === 'arrowup') keysRef.current.w = true;
@@ -94,41 +106,45 @@ function HeroCameraRig() {
     const keys = keysRef.current;
     const s = sphericalRef.current;
 
-    // Movement speeds
-    const orbitSpeed = 2.0;  // rad/s
-    const pitchSpeed = 1.6;  // rad/s
-    const zoomSpeed = 2.4;   // units/s
+    // Movement logic (active only when ENABLE_KEYBOARD_CONTROLS is true)
+    if (ENABLE_KEYBOARD_CONTROLS) {
+      const orbitSpeed = 2.0;  // rad/s
+      const pitchSpeed = 1.6;  // rad/s
+      const zoomSpeed = 2.4;   // units/s
 
-    // Horizontal Orbit: A rotates left, D rotates right
-    if (keys.a) s.theta -= orbitSpeed * delta;
-    if (keys.d) s.theta += orbitSpeed * delta;
+      // Horizontal Orbit: A rotates left, D rotates right
+      if (keys.a) s.theta -= orbitSpeed * delta;
+      if (keys.d) s.theta += orbitSpeed * delta;
 
-    // Vertical Orbit: W pitches up (decreases phi towards apex), S pitches down (increases phi towards base)
-    if (keys.w) s.phi -= pitchSpeed * delta;
-    if (keys.s) s.phi += pitchSpeed * delta;
-    s.phi = Math.max(0.05, Math.min(Math.PI - 0.05, s.phi));
+      // Vertical Orbit: W pitches up, S pitches down
+      if (keys.w) s.phi -= pitchSpeed * delta;
+      if (keys.s) s.phi += pitchSpeed * delta;
+      s.phi = Math.max(0.05, Math.min(Math.PI - 0.05, s.phi));
 
-    // Zoom: Q zooms in (closer), E zooms out (further)
-    if (keys.q) s.radius -= zoomSpeed * delta;
-    if (keys.e) s.radius += zoomSpeed * delta;
-    s.radius = Math.max(0.35, Math.min(12.0, s.radius));
+      // Zoom: Q zooms in, E zooms out
+      if (keys.q) s.radius -= zoomSpeed * delta;
+      if (keys.e) s.radius += zoomSpeed * delta;
+      s.radius = Math.max(0.35, Math.min(12.0, s.radius));
+    }
+
+    const mouse = useCockpitStore.getState().mouseNorm || { x: 0, y: 0 };
 
     const targetX = 0;
-    const targetY = 0.02;
+    const targetY = 0.05;
     const targetZ = 0;
 
-    // Spherical to Cartesian calculation
+    // Spherical to Cartesian calculation with subtle 3D mouse parallax
     const sinPhi = Math.sin(s.phi);
     const cosPhi = Math.cos(s.phi);
     const sinTheta = Math.sin(s.theta);
     const cosTheta = Math.cos(s.theta);
 
-    const destX = targetX + s.radius * sinPhi * sinTheta;
-    const destY = targetY + s.radius * cosPhi;
+    const destX = targetX + s.radius * sinPhi * sinTheta + mouse.x * 0.045;
+    const destY = targetY + s.radius * cosPhi + mouse.y * 0.035;
     const destZ = targetZ + s.radius * sinPhi * cosTheta;
 
     // Smooth camera transition
-    const lerpFactor = Math.min(1, delta * 12);
+    const lerpFactor = Math.min(1, delta * 10);
     camera.position.x += (destX - camera.position.x) * lerpFactor;
     camera.position.y += (destY - camera.position.y) * lerpFactor;
     camera.position.z += (destZ - camera.position.z) * lerpFactor;

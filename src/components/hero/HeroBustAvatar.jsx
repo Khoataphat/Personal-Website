@@ -48,53 +48,53 @@ const FILL_COLOR = {
 const INDIVIDUAL_ORBITS = [
   {
     item: { label: 'ABOUT', icon: '◈', accent: '#FF2E63' }, // Electric Ruby
-    radius: 0.205,
+    radius: 0.245,
     initialAngle: 0,
     inclination: [0.42, 0.25, 0.18], // Left cross tilt
     speed: -0.22,
-    arcAngle: 0.74,
+    arcAngle: 0.68,
     height: 0.046,
-    trailLength: 0.95,
+    trailLength: 0.88,
   },
   {
     item: { label: 'SKILLS', icon: '⬡', accent: '#FF7B00' }, // Solar Orange
-    radius: 0.235,
+    radius: 0.275,
     initialAngle: (2 * Math.PI) / 5, // 72 deg
     inclination: [-0.45, -0.28, -0.22], // Right cross tilt
     speed: 0.22,
-    arcAngle: 0.70,
+    arcAngle: 0.66,
     height: 0.046,
-    trailLength: 0.95,
+    trailLength: 0.88,
   },
   {
     item: { label: 'WORK', icon: '◎', accent: '#D4FF00' }, // Acid Lime
-    radius: 0.265,
+    radius: 0.305,
     initialAngle: (4 * Math.PI) / 5, // 144 deg
     inclination: [0.75, -0.15, 0.35], // Steep diagonal tilt
     speed: -0.22,
-    arcAngle: 0.68,
+    arcAngle: 0.64,
     height: 0.046,
-    trailLength: 1.05,
+    trailLength: 0.92,
   },
   {
     item: { label: 'BLOG', icon: '✦', accent: '#F72585' }, // Hot Magenta
-    radius: 0.295,
+    radius: 0.335,
     initialAngle: (6 * Math.PI) / 5, // 216 deg
     inclination: [-0.72, 0.20, -0.32], // Reverse steep diagonal tilt
     speed: 0.22,
-    arcAngle: 0.66,
+    arcAngle: 0.62,
     height: 0.046,
-    trailLength: 0.90,
+    trailLength: 0.86,
   },
   {
     item: { label: 'CONTACT', icon: '⬟', accent: '#00F2FE' }, // Ice Cyan
-    radius: 0.325,
+    radius: 0.365,
     initialAngle: (8 * Math.PI) / 5, // 288 deg
     inclination: [0.15, -0.05, 0.05], // Equatorial shallow tilt
     speed: -0.22,
-    arcAngle: 0.76,
+    arcAngle: 0.70,
     height: 0.046,
-    trailLength: 1.00,
+    trailLength: 0.95,
   },
 ];
 
@@ -344,16 +344,16 @@ function createTrailTexture(accent, isReversed) {
   if (!isReversed) {
     // Left (0) connects flush to card aura, Right (256) is tail tip fading to zero
     grad.addColorStop(0, accent);
-    grad.addColorStop(0.12, accent);
-    grad.addColorStop(0.35, `${accent}99`);
-    grad.addColorStop(0.70, `${accent}33`);
+    grad.addColorStop(0.15, `${accent}dd`);
+    grad.addColorStop(0.40, `${accent}77`);
+    grad.addColorStop(0.72, `${accent}22`);
     grad.addColorStop(1, 'rgba(0,0,0,0)');
   } else {
     // Left (0) is tail tip fading to zero, Right (256) connects flush to card aura
     grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(0.30, `${accent}33`);
-    grad.addColorStop(0.65, `${accent}99`);
-    grad.addColorStop(0.88, accent);
+    grad.addColorStop(0.28, `${accent}22`);
+    grad.addColorStop(0.60, `${accent}77`);
+    grad.addColorStop(0.85, `${accent}dd`);
     grad.addColorStop(1, accent);
   }
 
@@ -361,22 +361,22 @@ function createTrailTexture(accent, isReversed) {
   ctx.fillStyle = grad;
   ctx.beginPath();
   if (!isReversed) {
-    ctx.moveTo(0, 8);
-    ctx.lineTo(canvas.width, 28);
-    ctx.lineTo(canvas.width, 36);
-    ctx.lineTo(0, 56);
+    ctx.moveTo(0, 10);
+    ctx.lineTo(canvas.width, 29);
+    ctx.lineTo(canvas.width, 35);
+    ctx.lineTo(0, 54);
   } else {
-    ctx.moveTo(0, 28);
-    ctx.lineTo(canvas.width, 8);
-    ctx.lineTo(canvas.width, 56);
-    ctx.lineTo(0, 36);
+    ctx.moveTo(0, 29);
+    ctx.lineTo(canvas.width, 10);
+    ctx.lineTo(canvas.width, 54);
+    ctx.lineTo(0, 35);
   }
   ctx.closePath();
   ctx.fill();
 
   // Intense central laser beam in the trail
   ctx.strokeStyle = grad;
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = 2.0;
   ctx.beginPath();
   ctx.moveTo(0, 32);
   ctx.lineTo(canvas.width, 32);
@@ -674,16 +674,154 @@ function createOpticalEyeMaterial() {
 }
 
 /**
+ * Quantum Singularity Core Shader for Maze_Maze_0
+ * Renders a celestial black hole event horizon with rotating quantum energy filaments,
+ * pulsating gravitational accretion ripples, and a dynamic Cyan-to-Violet Fresnel photon halo.
+ */
+function createSingularityCoreMaterial() {
+  const vertexShader = `
+    varying vec3 vLocalPosition;
+    varying vec3 vNormal;
+    varying vec3 vViewPosition;
+    varying vec2 vUv;
+
+    void main() {
+      vUv = uv;
+      vLocalPosition = position;
+      vNormal = normalize(normalMatrix * normal);
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+      vViewPosition = -mvPosition.xyz;
+      gl_Position = projectionMatrix * mvPosition;
+    }
+  `;
+
+  const fragmentShader = `
+    precision mediump float;
+
+    uniform vec3 uCoreColor;
+    uniform vec3 uCyanPlasma;
+    uniform vec3 uPurplePlasma;
+    uniform float uGlow;
+    uniform float uTime;
+
+    varying vec3 vLocalPosition;
+    varying vec3 vNormal;
+    varying vec3 vViewPosition;
+    varying vec2 vUv;
+
+    vec3 hash33(vec3 p) {
+      p = fract(p * vec3(443.897, 441.423, 437.195));
+      p += dot(p, p.yxz + 19.19);
+      return fract((p.xxy + p.yxx) * p.zyx);
+    }
+
+    vec2 voronoi3D(vec3 p) {
+      vec3 b = floor(p);
+      vec3 f = fract(p);
+      float d1 = 8.0;
+      float d2 = 8.0;
+
+      for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+          for (int z = -1; z <= 1; z++) {
+            vec3 cell = vec3(float(x), float(y), float(z));
+            vec3 pt = cell + hash33(b + cell);
+            float d = dot(pt - f, pt - f);
+            if (d < d1) {
+              d2 = d1;
+              d1 = d;
+            } else if (d < d2) {
+              d2 = d;
+            }
+          }
+        }
+      }
+
+      return vec2(sqrt(max(d1, 0.0)), sqrt(max(d2, 0.0)));
+    }
+
+    void main() {
+      // Rotate 3D coordinates over time to create spinning accretion vortex
+      vec3 p = vLocalPosition * 5.2;
+      float angle = uTime * 0.75;
+      mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+      p.xz = rot * p.xz;
+
+      // 3D Voronoi energy filaments
+      vec2 v = voronoi3D(p);
+      float edgeDist = v.y - v.x;
+      float filaments = 1.0 - smoothstep(0.0, 0.075, edgeDist);
+
+      // Gravitational ripple pulse from the singularity center
+      float rDist = length(vLocalPosition);
+      float pulseWave = sin(rDist * 40.0 - uTime * 3.2) * 0.5 + 0.5;
+
+      // Dual-layer Fresnel photon accretion halo
+      vec3 viewDir = normalize(vViewPosition);
+      vec3 norm = normalize(vNormal);
+      float fresnel = pow(1.0 - max(dot(viewDir, norm), 0.0), 2.2);
+
+      // Dynamic breathing modulation
+      float breath = 0.90 + 0.15 * sin(uTime * 0.95);
+
+      // Color composition
+      vec3 col = uCoreColor;
+
+      // Filaments energy glow in quantum cyan
+      col = mix(col, uCyanPlasma * (uGlow * breath), filaments * 0.88);
+
+      // Accretion pulse ripple in electric violet
+      col += uPurplePlasma * (pulseWave * filaments * 0.45 * breath);
+
+      // Outer photon accretion rim (Cyan shifting to Violet at extreme angles)
+      vec3 rimColor = mix(uCyanPlasma, uPurplePlasma, fresnel);
+      col += rimColor * (fresnel * 2.2 * breath);
+
+      // Safety clamp to guard against any GPU float overflow
+      col = clamp(col, vec3(0.0), vec3(4.0));
+
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `;
+
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uCoreColor: { value: new THREE.Color('#01030a') },
+      uCyanPlasma: { value: new THREE.Color('#00E5FF') },
+      uPurplePlasma: { value: new THREE.Color('#A855F7') },
+      uGlow: { value: 2.2 },
+      uTime: { value: 0.0 },
+    },
+    vertexShader,
+    fragmentShader,
+    depthTest: true,
+    depthWrite: true,
+    side: THREE.FrontSide,
+    toneMapped: false,
+  });
+}
+
+export const CELESTIAL_CONFIG = {
+  baseScale: 0.75,      // 75% size by default
+  hoverScale: 1.00,     // 100% size on hover (full original scale)
+  lerpSpeed: 0.08,      // Smooth interpolation factor
+};
+
+/**
  * HeroBustAvatar
  *
  * Direct hierarchy attachment:
  * - Scans GLB clone for Maze_Maze_0 (which sits directly in the palm).
- * - Attaches Black Hole Core, Photon Ring, and 5 Independent Planetary Orbital Belts with Unified Plasma Aura & Comet Trails.
+ * - Attaches Quantum Singularity Core, Photon Ring, and 5 Independent Planetary Orbital Belts with Unified Plasma Aura & Comet Trails.
+ * - Supports Dynamic Master Scaling & Interactive Hover Zoom.
  */
-export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
+export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
   const rootRef = useRef();
   const orbitRefs = useRef([]);
   const shaderMatsRef = useRef([]);
+  const hitAreaRef = useRef();
+  const targetScaleRef = useRef(CELESTIAL_CONFIG.baseScale);
+  const currentScaleRef = useRef(CELESTIAL_CONFIG.baseScale);
   const { scene } = useGLTF(GLB_PATH);
 
   const { dualLayerScene, mazeNode } = useMemo(() => {
@@ -740,6 +878,7 @@ export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
         glow: 1.85,
         bilateral: true,
       }),
+      maze: createSingularityCoreMaterial(),
     };
 
     const replacements = [];
@@ -757,26 +896,13 @@ export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
         return;
       }
 
+      // ── Quantum Singularity Core for Maze Sphere ─────────────────────
       if (meshName === 'Maze_Maze_0') {
         foundMaze = child;
-        const wireGeo = new THREE.WireframeGeometry(child.geometry);
-        const wireMat = new THREE.LineBasicMaterial({
-          color: '#00E5FF',
-          transparent: true,
-          opacity: 0.65,
-          toneMapped: false,
-          depthWrite: false,
-        });
-        const wireLines = new THREE.LineSegments(wireGeo, wireMat);
-        child.add(wireLines);
-
-        child.material = new THREE.MeshBasicMaterial({
-          color: '#020308',
-          transparent: false,
-          depthWrite: true,
-          depthTest: true,
-          toneMapped: false,
-        });
+        child.userData.initialScale = child.scale.clone();
+        child.material = matPool.maze;
+        child.visible = true;
+        child.renderOrder = 7;
         return;
       }
 
@@ -846,7 +972,6 @@ export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
   // Animation frame
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
-    const mouse = useCockpitStore.getState().mouseNorm;
 
     // Update breathing glow on all full-body shader materials
     shaderMatsRef.current.forEach((mat) => {
@@ -861,9 +986,30 @@ export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
       rootRef.current.rotation.x = 0;
     }
 
+    // Dynamic scale interpolation (defaults to 50%, smoothly scales to 75% on hover)
+    const desiredScale = coreScale !== null ? coreScale : targetScaleRef.current;
+    currentScaleRef.current = THREE.MathUtils.lerp(
+      currentScaleRef.current,
+      desiredScale,
+      CELESTIAL_CONFIG.lerpSpeed
+    );
+    const scale = currentScaleRef.current;
+
     if (mazeNode) {
       const worldPos = new THREE.Vector3();
       mazeNode.getWorldPosition(worldPos);
+
+      // Scale the singularity core sphere proportionally relative to its native GLB scale
+      if (mazeNode.userData && mazeNode.userData.initialScale) {
+        mazeNode.scale.copy(mazeNode.userData.initialScale).multiplyScalar(scale);
+      } else {
+        mazeNode.scale.setScalar(0.39852 * scale);
+      }
+
+      // Sync interactive hit area position
+      if (hitAreaRef.current) {
+        hitAreaRef.current.position.copy(worldPos);
+      }
 
       // Orbit each of the 5 cards along its independent gyroscopic cross-orbital trajectory
       INDIVIDUAL_ORBITS.forEach((orbit, i) => {
@@ -871,6 +1017,7 @@ export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
         if (ref) {
           ref.position.copy(worldPos);
           ref.rotation.y = t * orbit.speed + orbit.initialAngle;
+          ref.scale.setScalar(scale);
         }
       });
     }
@@ -881,6 +1028,23 @@ export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
       <group ref={rootRef} position={position}>
         <primitive object={dualLayerScene} />
       </group>
+
+      {/* ── Interactive Hit Target for Core Hover Zoom ── */}
+      <mesh
+        ref={hitAreaRef}
+        visible={false}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          targetScaleRef.current = CELESTIAL_CONFIG.hoverScale;
+        }}
+        onPointerOut={(e) => {
+          e.stopPropagation();
+          targetScaleRef.current = CELESTIAL_CONFIG.baseScale;
+        }}
+      >
+        <sphereGeometry args={[0.18, 12, 12]} />
+        <meshBasicMaterial transparent opacity={0} />
+      </mesh>
 
       {/* ── 5 Concentric Rigid Circular Orbits with Unified Plasma Aura & Comet Trails ── */}
       {INDIVIDUAL_ORBITS.map((orbit, i) => (
