@@ -552,8 +552,8 @@ function createProceduralCyberShaderMaterial({
       float edgeDist = v.y - v.x;
       float lineFactor = 1.0 - smoothstep(0.0, uLineWidth, edgeDist);
 
-      // Subtle breathing wave modulation on glow
-      float breath = 0.85 + 0.30 * sin(uTime * 0.85);
+      // Breathing glow: clamp floor at 0.90 so base color NEVER dips to near-black
+      float breath = 0.90 + 0.10 * sin(uTime * 0.75);
       float currentGlow = uGlow * breath;
 
       // Fresnel edge rim glow
@@ -561,10 +561,13 @@ function createProceduralCyberShaderMaterial({
       vec3 norm = normalize(vNormal);
       float fresnel = pow(1.0 - max(dot(viewDir, norm), 0.0), 2.5);
 
-      // Final color composition
+      // Final color composition — base always stays visible, never pure black
       vec3 col = uBaseColor;
-      col = mix(col, uLineColor * currentGlow, lineFactor);
-      col += uRimColor * (fresnel * 0.75 * breath);
+      col = mix(col, uLineColor * currentGlow, lineFactor * 0.95);
+      col += uRimColor * (fresnel * 0.65 * breath);
+
+      // Hard clamp: guard against any residual NaN or overshoot
+      col = clamp(col, vec3(0.0), vec3(4.0));
 
       gl_FragColor = vec4(col, 1.0);
     }
@@ -585,6 +588,7 @@ function createProceduralCyberShaderMaterial({
     fragmentShader,
     depthTest: true,
     depthWrite: true,
+    side: THREE.FrontSide,
     toneMapped: false,
   });
 }
@@ -783,7 +787,7 @@ export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
       if (meshName.startsWith('Eye')) {
         child.material = matPool.eye;
         child.visible = true;
-        child.renderOrder = 4;
+        child.renderOrder = 8;
         return;
       }
 
@@ -791,7 +795,7 @@ export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
       if (meshName.startsWith('Mask')) {
         child.material = matPool.mask;
         child.visible = true;
-        child.renderOrder = 2;
+        child.renderOrder = 5;
         return;
       }
 
@@ -799,7 +803,7 @@ export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
       if (meshName.startsWith('Cloth') || meshName.includes('Robe')) {
         child.material = matPool.robe;
         child.visible = true;
-        child.renderOrder = 1;
+        child.renderOrder = 2;
         return;
       }
 
@@ -807,7 +811,7 @@ export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
       if (meshName.startsWith('straps') || meshName.includes('Straps')) {
         child.material = matPool.straps;
         child.visible = true;
-        child.renderOrder = 2;
+        child.renderOrder = 6;
         return;
       }
 
@@ -815,14 +819,14 @@ export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
       if (meshName.startsWith('Hand') || meshName.includes('Hand')) {
         child.material = matPool.hand;
         child.visible = true;
-        child.renderOrder = 2;
+        child.renderOrder = 4;
         return;
       }
 
       // ── Default: Procedural Electric Cyan Facet Shader for Body & Neck
       child.material = matPool.body;
       child.visible = true;
-      child.renderOrder = 1;
+      child.renderOrder = 3;
     });
 
     shaderMatsRef.current = Object.values(matPool);
