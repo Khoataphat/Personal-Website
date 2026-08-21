@@ -10,38 +10,38 @@ const WIRE_COLOR = {
   'Body_Body_0': '#00E5FF',
   'Hand_Hand_0': '#00E5FF',
   'Zweihander_Sword_0': '#7A00FF',
-  'Mask_Mask_0': '#7A00FF',
-  'Mask_Mask_0_1': '#7A00FF',
-  'Mask_Mask_0_2': '#00E5FF',
-  'straps_Straps_0': '#7A00FF',
+  'Mask_Mask_0': '#C084FC', // Lavender Neon for Low-Poly Faceplate
+  'Mask_Mask_0_1': '#C084FC',
+  'Mask_Mask_0_2': '#C084FC',
+  'straps_Straps_0': '#A855F7',
   'Cloth_Robe_0': '#00FF88',
-  'Eye_Eye_0': '#FFD700',
-  'Eye001_Eye_0': '#FFD700',
-  'Eye002_Eye_0': '#FFD700',
-  'Eye003_Eye_0': '#FFD700',
-  'Eye004_Eye_0': '#FFD700',
-  'Eye005_Eye_0': '#FFD700',
+  'Eye_Eye_0': '#FFB703',
+  'Eye001_Eye_0': '#FFB703',
+  'Eye002_Eye_0': '#FFB703',
+  'Eye003_Eye_0': '#FFB703',
+  'Eye004_Eye_0': '#FFB703',
+  'Eye005_Eye_0': '#FFB703',
   'Maze_Maze_0': '#00E5FF',
 };
 
 const FILL_OPACITY = {
   'Cloth_Robe_0': 0.98,
   'Body_Body_0': 0.98,
-  'Hand_Hand_0': 0.85,
-  'Mask_Mask_0': 0.96,
-  'Mask_Mask_0_1': 0.96,
-  'Mask_Mask_0_2': 0.96,
-  DEFAULT: 0.20,
+  'Hand_Hand_0': 0.98,
+  'Mask_Mask_0': 0.98,
+  'Mask_Mask_0_1': 0.98,
+  'Mask_Mask_0_2': 0.98,
+  DEFAULT: 0.98,
 };
 
 const FILL_COLOR = {
-  'Cloth_Robe_0': '#00150a',
+  'Cloth_Robe_0': '#001408',
   'Body_Body_0': '#020612',
-  'Hand_Hand_0': '#001a2e',
-  'Mask_Mask_0': '#1a0036',
-  'Mask_Mask_0_1': '#1a0036',
-  'Mask_Mask_0_2': '#001a2e',
-  DEFAULT: '#0a0a16',
+  'Hand_Hand_0': '#020612',
+  'Mask_Mask_0': '#080214', // Deep Obsidian Black-Purple
+  'Mask_Mask_0_1': '#080214',
+  'Mask_Mask_0_2': '#080214',
+  DEFAULT: '#050814',
 };
 
 // 5-Axis Gyroscopic Cross-Orbital System (Atomic Cross-Orbits with Alternating Bi-directional Flow, 72° Phase Lock)
@@ -466,6 +466,210 @@ function CurvedCyberCard({ item, radius, arcAngle = 0.74, height = 0.046 }) {
 }
 
 /**
+ * Procedural Cyber-Voronoi Shader Material Generator
+ * Computes 3D Voronoi facet edges + Fresnel rim glow + dynamic breathing glow directly on the GPU.
+ */
+function createProceduralCyberShaderMaterial({
+  baseColor = '#020612',
+  lineColor = '#00E5FF',
+  rimColor = '#00E5FF',
+  scale = 2.8,
+  lineWidth = 0.048,
+  glow = 1.8,
+  bilateral = false,
+}) {
+  const vertexShader = `
+    varying vec3 vLocalPosition;
+    varying vec3 vNormal;
+    varying vec3 vViewPosition;
+
+    void main() {
+      vLocalPosition = position;
+      vNormal = normalize(normalMatrix * normal);
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+      vViewPosition = -mvPosition.xyz;
+      gl_Position = projectionMatrix * mvPosition;
+    }
+  `;
+
+  const fragmentShader = `
+    uniform vec3 uBaseColor;
+    uniform vec3 uLineColor;
+    uniform vec3 uRimColor;
+    uniform float uScale;
+    uniform float uLineWidth;
+    uniform float uGlow;
+    uniform float uTime;
+    uniform float uBilateral;
+
+    varying vec3 vLocalPosition;
+    varying vec3 vNormal;
+    varying vec3 vViewPosition;
+
+    // Fast, ultra-stable non-trigonometric 3D hash (0% risk of float overflow or NaN)
+    vec3 hash33(vec3 p) {
+      p = fract(p * vec3(0.1031, 0.1030, 0.0973));
+      p += dot(p, p.yxz + 33.33);
+      return fract((p.xxy + p.yxx) * p.zyx);
+    }
+
+    // 3D Voronoi with NaN guard and boundary safety
+    vec2 voronoi3D(vec3 x) {
+      vec3 p = floor(x);
+      vec3 f = fract(x);
+
+      float d1 = 8.0;
+      float d2 = 8.0;
+
+      for (int k = -1; k <= 1; k++) {
+        for (int j = -1; j <= 1; j++) {
+          for (int i = -1; i <= 1; i++) {
+            vec3 b = vec3(float(i), float(j), float(k));
+            vec3 r = vec3(b) - f + hash33(p + b);
+            float d = dot(r, r);
+
+            if (d < d1) {
+              d2 = d1;
+              d1 = d;
+            } else if (d < d2) {
+              d2 = d;
+            }
+          }
+        }
+      }
+
+      return vec2(sqrt(max(d1, 0.0)), sqrt(max(d2, 0.0)));
+    }
+
+    void main() {
+      vec3 pos = vLocalPosition * uScale;
+      if (uBilateral > 0.5) {
+        pos.x = abs(pos.x);
+      }
+
+      // Compute Voronoi boundary
+      vec2 v = voronoi3D(pos);
+      float edgeDist = v.y - v.x;
+      float lineFactor = 1.0 - smoothstep(0.0, uLineWidth, edgeDist);
+
+      // Subtle breathing wave modulation on glow
+      float breath = 0.85 + 0.30 * sin(uTime * 0.85);
+      float currentGlow = uGlow * breath;
+
+      // Fresnel edge rim glow
+      vec3 viewDir = normalize(vViewPosition);
+      vec3 norm = normalize(vNormal);
+      float fresnel = pow(1.0 - max(dot(viewDir, norm), 0.0), 2.5);
+
+      // Final color composition
+      vec3 col = uBaseColor;
+      col = mix(col, uLineColor * currentGlow, lineFactor);
+      col += uRimColor * (fresnel * 0.75 * breath);
+
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `;
+
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uBaseColor: { value: new THREE.Color(baseColor) },
+      uLineColor: { value: new THREE.Color(lineColor) },
+      uRimColor: { value: new THREE.Color(rimColor) },
+      uScale: { value: scale },
+      uLineWidth: { value: lineWidth },
+      uGlow: { value: glow },
+      uTime: { value: 0.0 },
+      uBilateral: { value: bilateral ? 1.0 : 0.0 },
+    },
+    vertexShader,
+    fragmentShader,
+    depthTest: true,
+    depthWrite: true,
+    toneMapped: false,
+  });
+}
+
+/**
+ * Optical Multi-Layer Emissive Shader for the 6 Native Eye Meshes
+ */
+function createOpticalEyeMaterial() {
+  const vertexShader = `
+    varying vec2 vUv;
+    varying vec3 vLocalPos;
+    varying vec3 vNormal;
+    varying vec3 vViewPosition;
+
+    void main() {
+      vUv = uv;
+      vLocalPos = position;
+      vNormal = normalize(normalMatrix * normal);
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+      vViewPosition = -mvPosition.xyz;
+      gl_Position = projectionMatrix * mvPosition;
+    }
+  `;
+
+  const fragmentShader = `
+    uniform vec3 uOuterGold;
+    uniform vec3 uRimGold;
+    uniform vec3 uCavityColor;
+    uniform vec3 uPupilColor;
+    uniform float uGlow;
+    uniform float uTime;
+
+    varying vec2 vUv;
+    varying vec3 vLocalPos;
+    varying vec3 vNormal;
+    varying vec3 vViewPosition;
+
+    void main() {
+      // Center-distance in UV space
+      vec2 center = vec2(0.5, 0.5);
+      float dist = distance(vUv, center) * 2.0;
+
+      // Outer gold bevel & highlight rim
+      float outerRim = smoothstep(0.68, 0.86, dist);
+      float outerSparkle = smoothstep(0.88, 1.0, dist);
+
+      // Inner iris blade ring
+      float irisRing = smoothstep(0.30, 0.44, dist) * (1.0 - smoothstep(0.60, 0.70, dist));
+      float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
+      float blades = sin(angle * 12.0) * 0.5 + 0.5;
+      float bladeIntensity = irisRing * (0.6 + 0.4 * blades);
+
+      // Luminous white-hot center pupil core with subtle breathing pulse
+      float pupilCore = 1.0 - smoothstep(0.0, 0.28, dist);
+      float breath = 0.90 + 0.20 * sin(uTime * 0.85);
+
+      // Composite final optical eye color
+      vec3 col = uCavityColor;
+      col = mix(col, uOuterGold, outerRim);
+      col = mix(col, uRimGold * 1.6, outerSparkle);
+      col = mix(col, uOuterGold * 1.4, bladeIntensity);
+      col = mix(col, uPupilColor * (uGlow * breath), pupilCore);
+
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `;
+
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uOuterGold: { value: new THREE.Color('#FFB703') },     // Solar Gold
+      uRimGold: { value: new THREE.Color('#FFF275') },       // Sparkling Gold Highlight
+      uCavityColor: { value: new THREE.Color('#020106') },   // Deep Obsidian
+      uPupilColor: { value: new THREE.Color('#FFFFFF') },    // White-Hot Core
+      uGlow: { value: 2.5 },                                 // Radiant pupil glow
+      uTime: { value: 0.0 },
+    },
+    vertexShader,
+    fragmentShader,
+    depthTest: true,
+    depthWrite: true,
+    toneMapped: false,
+  });
+}
+
+/**
  * HeroBustAvatar
  *
  * Direct hierarchy attachment:
@@ -475,6 +679,7 @@ function CurvedCyberCard({ item, radius, arcAngle = 0.74, height = 0.046 }) {
 export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
   const rootRef = useRef();
   const orbitRefs = useRef([]);
+  const shaderMatsRef = useRef([]);
   const { scene } = useGLTF(GLB_PATH);
 
   const { dualLayerScene, mazeNode } = useMemo(() => {
@@ -482,6 +687,56 @@ export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
     cloned.updateMatrixWorld(true);
 
     let foundMaze = null;
+
+    // Shared Material Pool to prevent WebGL pipeline recompilation and black flickering
+    const matPool = {
+      eye: createOpticalEyeMaterial(),
+      mask: createProceduralCyberShaderMaterial({
+        baseColor: '#080214',
+        lineColor: '#C084FC',
+        rimColor: '#A855F7',
+        scale: 4.6,
+        lineWidth: 0.046,
+        glow: 1.85,
+        bilateral: true,
+      }),
+      robe: createProceduralCyberShaderMaterial({
+        baseColor: '#001408',
+        lineColor: '#00FF88',
+        rimColor: '#00FF88',
+        scale: 3.6,
+        lineWidth: 0.042,
+        glow: 1.75,
+        bilateral: false,
+      }),
+      straps: createProceduralCyberShaderMaterial({
+        baseColor: '#05020c',
+        lineColor: '#A855F7',
+        rimColor: '#A855F7',
+        scale: 5.5,
+        lineWidth: 0.046,
+        glow: 1.80,
+        bilateral: false,
+      }),
+      hand: createProceduralCyberShaderMaterial({
+        baseColor: '#020612',
+        lineColor: '#00E5FF',
+        rimColor: '#00E5FF',
+        scale: 5.2,
+        lineWidth: 0.046,
+        glow: 1.85,
+        bilateral: false,
+      }),
+      body: createProceduralCyberShaderMaterial({
+        baseColor: '#020612',
+        lineColor: '#00E5FF',
+        rimColor: '#00E5FF',
+        scale: 4.8,
+        lineWidth: 0.044,
+        glow: 1.85,
+        bilateral: true,
+      }),
+    };
 
     const replacements = [];
     cloned.traverse((child) => {
@@ -500,7 +755,6 @@ export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
 
       if (meshName === 'Maze_Maze_0') {
         foundMaze = child;
-        // Make the original maze mesh transparent and render wireframe + solid black hole inside it for 100% Z-occlusion
         const wireGeo = new THREE.WireframeGeometry(child.geometry);
         const wireMat = new THREE.LineBasicMaterial({
           color: '#00E5FF',
@@ -525,65 +779,53 @@ export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
       const geo = child.geometry;
       if (!geo) return;
 
-      const isEye = meshName.startsWith('Eye');
-      const isRobe = meshName === 'Cloth_Robe_0';
-      const isMask = meshName.startsWith('Mask_Mask_0');
-      const isHand = meshName === 'Hand_Hand_0';
-      const isBody = meshName === 'Body_Body_0';
-
-      // ── Special Case: Golden Eyes (Keep original prominent glowing eyes) ──
-      if (isEye) {
-        const eyeMat = new THREE.MeshBasicMaterial({
-          color: '#FFD700',
-          transparent: false,
-          depthTest: false,
-          depthWrite: false,
-          toneMapped: false,
-        });
-        child.material = eyeMat;
-        child.renderOrder = 10;
+      // ── Native Optical Emissive Shader for the 6 Eyes ─────────────────
+      if (meshName.startsWith('Eye')) {
+        child.material = matPool.eye;
+        child.visible = true;
+        child.renderOrder = 4;
         return;
       }
 
-      // ── Layer 1: Wireframe LineSegments ──────────────────────────────
-      const wireGeo = new THREE.WireframeGeometry(geo);
-      const wireColor = WIRE_COLOR[meshName] ?? '#00E5FF';
-      const wireMat = new THREE.LineBasicMaterial({
-        color: wireColor,
-        transparent: true,
-        opacity: isRobe ? 0.65 : 0.85,
-        toneMapped: false,
-        depthTest: true,
-        depthWrite: false,
-      });
-      const wireLines = new THREE.LineSegments(wireGeo, wireMat);
-      wireLines.name = meshName + '_wire';
-      wireLines.renderOrder = 3;
+      // ── Procedural Voronoi Facet Shader for Mask Faceplate ───────────
+      if (meshName.startsWith('Mask')) {
+        child.material = matPool.mask;
+        child.visible = true;
+        child.renderOrder = 2;
+        return;
+      }
 
-      // ── Layer 2: Inner fill Mesh (Solid Depth Occluder for Robe/Mask/Body/Hand) ──
-      const fillColor = FILL_COLOR[meshName] ?? FILL_COLOR.DEFAULT;
-      const fillOpacity = FILL_OPACITY[meshName] ?? FILL_OPACITY.DEFAULT;
-      const shouldWriteDepth = isRobe || isMask || isHand || isBody;
+      // ── Procedural Cyber Emerald Facet Shader for Cloth Robe ─────────
+      if (meshName.startsWith('Cloth') || meshName.includes('Robe')) {
+        child.material = matPool.robe;
+        child.visible = true;
+        child.renderOrder = 1;
+        return;
+      }
 
-      const fillMat = new THREE.MeshBasicMaterial({
-        color: fillColor,
-        transparent: false,
-        opacity: fillOpacity,
-        side: THREE.FrontSide,
-        depthTest: true,
-        depthWrite: shouldWriteDepth, // Solid depth occluder for head, neck, robe, mask & hand
-        toneMapped: false,
-      });
-      const fillMesh = new THREE.Mesh(geo.clone(), fillMat);
-      fillMesh.name = meshName + '_fill';
-      fillMesh.renderOrder = (isRobe || isMask) ? 0 : 1;
+      // ── Procedural Violet Facet Shader for Straps ────────────────────
+      if (meshName.startsWith('straps') || meshName.includes('Straps')) {
+        child.material = matPool.straps;
+        child.visible = true;
+        child.renderOrder = 2;
+        return;
+      }
 
-      child.add(wireLines);
-      child.add(fillMesh);
+      // ── Procedural Electric Cyan Facet Shader for Hand ───────────────
+      if (meshName.startsWith('Hand') || meshName.includes('Hand')) {
+        child.material = matPool.hand;
+        child.visible = true;
+        child.renderOrder = 2;
+        return;
+      }
 
-      child.material = new THREE.MeshBasicMaterial({ visible: false, transparent: true, opacity: 0 });
-      child.material.depthWrite = false;
+      // ── Default: Procedural Electric Cyan Facet Shader for Body & Neck
+      child.material = matPool.body;
+      child.visible = true;
+      child.renderOrder = 1;
     });
+
+    shaderMatsRef.current = Object.values(matPool);
 
     // Auto-scale to TARGET_HEIGHT
     const bbox = new THREE.Box3().setFromObject(cloned);
@@ -601,6 +843,13 @@ export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
     const mouse = useCockpitStore.getState().mouseNorm;
+
+    // Update breathing glow on all full-body shader materials
+    shaderMatsRef.current.forEach((mat) => {
+      if (mat.uniforms && mat.uniforms.uTime) {
+        mat.uniforms.uTime.value = t;
+      }
+    });
 
     if (rootRef.current) {
       rootRef.current.position.y = position[1] + Math.sin(t * 1.1) * 0.02;
