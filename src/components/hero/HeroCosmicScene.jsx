@@ -39,25 +39,27 @@ function TelemetryTracker() {
 /**
  * Hero Camera Rig
  *
- * Cinematic bust framing: camera positioned to frame the avatar from hands
- * up to the top of the head so it commands >60% of the viewport.
+ * Cinematic Ultra Close-up Framing (z = 1.95):
+ *   - Camera at z = 1.95, y = 0.02
+ *   - LookAt at y = 0.02
+ *   - Model fills maximum viewport height: head right below TopNav, hand at bottom edge
  */
 function HeroCameraRig() {
   useFrame(({ camera }, delta) => {
     const mouse = useCockpitStore.getState().mouseNorm;
 
-    const targetZ = 3.25;
-    const targetY = 0.15;
+    const targetZ = 1.95;
+    const targetY = 0.02;
     const targetX = 0;
 
-    const finalX = targetX + mouse.x * 0.14;
-    const finalY = targetY + mouse.y * 0.08;
+    const finalX = targetX + mouse.x * 0.04;
+    const finalY = targetY + mouse.y * 0.02;
 
     camera.position.x += (finalX - camera.position.x) * Math.min(1, delta * 6);
     camera.position.y += (finalY - camera.position.y) * Math.min(1, delta * 6);
     camera.position.z += (targetZ - camera.position.z) * Math.min(1, delta * 6);
 
-    camera.lookAt(0, 0.05, 0);
+    camera.lookAt(0, 0.02, 0);
   });
 
   return null;
@@ -68,7 +70,8 @@ function HeroCameraRig() {
  *
  * Main R3F Canvas:
  *   - Background matrix deep space
- *   - HeroBustAvatar (contains the dual-layer model + palm-mounted CosmicBlackHole & PlanetaryOrbitRing)
+ *   - HeroBustAvatar (close-up framed at AVATAR_Y = -2.85)
+ *   - Cinematic Ultra Close-up Camera Rig (z = 1.95, targetY = 0.02)
  *   - Cinematic lights & adaptive Bloom postprocessing
  */
 export function HeroCosmicScene() {
@@ -98,7 +101,7 @@ export function HeroCosmicScene() {
       onPointerMove={handlePointerMove}
     >
       <Canvas
-        camera={{ fov: 45, position: [0, 0.15, 3.25], near: 0.1, far: 80 }}
+        camera={{ fov: 45, position: [0, 0.02, 1.95], near: 0.1, far: 80 }}
         gl={{
           antialias: isHighTier,
           alpha: true,
@@ -118,9 +121,9 @@ export function HeroCosmicScene() {
         {/* Deep Space Background Matrix */}
         <BackgroundMatrix3D particleCount={particleCount} />
 
-        {/* Dual-layer Bust Avatar with Palm-mounted Black Hole & Planetary Orbit */}
+        {/* Dual-layer Bust Avatar (Framed at AVATAR_Y = -2.85) */}
         <Suspense fallback={null}>
-          <HeroBustAvatar position={[0, -2.6, 0]} />
+          <HeroBustAvatar position={[0, -2.85, 0]} />
         </Suspense>
 
         {/* Adaptive Bloom */}

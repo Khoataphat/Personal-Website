@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useEffect } from 'react';
+import React, { useRef, useMemo } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF, Html } from '@react-three/drei';
@@ -60,13 +60,13 @@ const TARGET_HEIGHT = 3.6;
  * Direct hierarchy attachment:
  * - Scans GLB clone for Maze_Maze_0 (which sits directly in the palm).
  * - Attaches Black Hole Core, Photon Ring, and Planetary Ring Orbit directly as child objects of Maze_Maze_0.
- * - This guarantees 100% accurate physical alignment with the palm of the hand!
+ * - Adds a subtle futuristic holographic scanner beam sweeping vertically.
  */
-export function HeroBustAvatar({ position = [0, -2.6, 0] }) {
+export function HeroBustAvatar({ position = [0, -2.15, 0] }) {
   const rootRef = useRef();
   const planetaryGroupRef = useRef();
-  const blackHoleCoreRef = useRef();
   const photonRingRef = useRef();
+  const scanlineRef = useRef();
   const { scene } = useGLTF(GLB_PATH);
 
   const { dualLayerScene, mazeNode } = useMemo(() => {
@@ -86,12 +86,12 @@ export function HeroBustAvatar({ position = [0, -2.6, 0] }) {
 
       if (meshName === 'Maze_Maze_0') {
         foundMaze = child;
-        // Make the original maze mesh transparent and render wireframe + black hole inside it
+        // Make the original maze mesh transparent and render wireframe + dark black hole inside it
         const wireGeo = new THREE.WireframeGeometry(child.geometry);
         const wireMat = new THREE.LineBasicMaterial({
           color: '#00E5FF',
           transparent: true,
-          opacity: 0.4,
+          opacity: 0.65,
           toneMapped: false,
           depthWrite: false,
         });
@@ -101,7 +101,7 @@ export function HeroBustAvatar({ position = [0, -2.6, 0] }) {
         child.material = new THREE.MeshBasicMaterial({
           color: '#000000',
           transparent: true,
-          opacity: 0.92,
+          opacity: 0.94,
           depthWrite: true,
           toneMapped: false,
         });
@@ -152,25 +152,23 @@ export function HeroBustAvatar({ position = [0, -2.6, 0] }) {
     if (size.y > 0) {
       const s = TARGET_HEIGHT / size.y;
       cloned.scale.setScalar(s);
-      console.log(`[HeroBustAvatar] Model auto-scaled with factor ${s.toFixed(4)}`);
     }
 
     return { dualLayerScene: cloned, mazeNode: foundMaze };
   }, [scene]);
 
-  // Animation frame: levitation, head tilt, and planetary orbit rotation
+  // Animation frame
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
     const mouse = useCockpitStore.getState().mouseNorm;
 
     if (rootRef.current) {
-      rootRef.current.position.y = position[1] + Math.sin(t * 1.1) * 0.025;
-      rootRef.current.rotation.y = mouse.x * 0.05;
-      rootRef.current.rotation.x = mouse.y * -0.02;
+      rootRef.current.position.y = position[1] + Math.sin(t * 1.1) * 0.02;
+      rootRef.current.rotation.y = mouse.x * 0.04;
+      rootRef.current.rotation.x = mouse.y * -0.015;
     }
 
     if (planetaryGroupRef.current && mazeNode) {
-      // Get exact world position of the Maze_Maze_0 in the palm
       const worldPos = new THREE.Vector3();
       mazeNode.getWorldPosition(worldPos);
       planetaryGroupRef.current.position.copy(worldPos);
@@ -180,20 +178,38 @@ export function HeroBustAvatar({ position = [0, -2.6, 0] }) {
     if (photonRingRef.current) {
       photonRingRef.current.rotation.z = t * 0.15;
     }
+
+    if (scanlineRef.current) {
+      // Periodic vertical hologram scan sweep
+      scanlineRef.current.position.y = 0.5 + Math.sin(t * 1.8) * 1.1;
+      scanlineRef.current.material.opacity = 0.35 + Math.sin(t * 3.6) * 0.2;
+    }
   });
 
   return (
     <>
       <group ref={rootRef} position={position}>
         <primitive object={dualLayerScene} />
+
+        {/* ── Futuristic Holographic Laser Scanline Sweep ──────────── */}
+        <mesh ref={scanlineRef} position={[0, 0.5, 0.1]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[1.8, 0.015]} />
+          <meshBasicMaterial
+            color="#00f2fe"
+            transparent
+            opacity={0.45}
+            side={THREE.DoubleSide}
+            toneMapped={false}
+          />
+        </mesh>
       </group>
 
       {/* ── Planetary Orbit Ring with 5 Ultra-thin Capsule Tags orbiting the palm ── */}
       <group ref={planetaryGroupRef}>
         {/* Glowing planetary orbital guide ring */}
-        <mesh rotation={[Math.PI / 2 + 0.35, 0, 0]}>
-          <ringGeometry args={[0.36, 0.375, 64]} />
-          <meshBasicMaterial color="#00f2fe" transparent opacity={0.45} side={THREE.DoubleSide} toneMapped={false} />
+        <mesh rotation={[Math.PI / 2 + 0.3, 0, 0]}>
+          <ringGeometry args={[0.35, 0.368, 64]} />
+          <meshBasicMaterial color="#00f2fe" transparent opacity={0.5} side={THREE.DoubleSide} toneMapped={false} />
         </mesh>
 
         {/* Photon ring glowing torus */}
@@ -202,19 +218,19 @@ export function HeroBustAvatar({ position = [0, -2.6, 0] }) {
           <meshBasicMaterial color="#00f2fe" transparent opacity={0.75} side={THREE.DoubleSide} toneMapped={false} />
         </mesh>
 
-        {/* 5 Ultra-thin Capsule Tags */}
+        {/* 5 Polished Capsule Tags */}
         {CAPSULE_ITEMS.map((item, i) => {
           const theta = i * ((2 * Math.PI) / 5);
-          const r = 0.37;
+          const r = 0.36;
           const x = r * Math.sin(theta);
           const z = r * Math.cos(theta);
-          const y = Math.sin(theta) * 0.08;
+          const y = Math.sin(theta) * 0.06;
 
           return (
             <group key={i} position={[x, y, z]}>
               <Html
                 center
-                distanceFactor={4.8}
+                distanceFactor={4.2}
                 zIndexRange={[15, 25]}
                 style={{ pointerEvents: 'none', userSelect: 'none' }}
               >
@@ -223,20 +239,40 @@ export function HeroBustAvatar({ position = [0, -2.6, 0] }) {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
-                    padding: '2px 7px',
-                    background: 'rgba(5, 5, 14, 0.82)',
-                    backdropFilter: 'blur(10px)',
-                    WebkitBackdropFilter: 'blur(10px)',
-                    border: `1px solid ${item.accent}77`,
+                    padding: '2.5px 8px',
+                    background: 'rgba(4, 4, 12, 0.90)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    border: `1.2px solid ${item.accent}`,
                     borderRadius: '9999px',
-                    boxShadow: `0 0 10px ${item.accent}44`,
+                    boxShadow: `0 0 12px ${item.accent}77, inset 0 0 5px ${item.accent}33`,
                     whiteSpace: 'nowrap',
                     fontFamily: "'Share Tech Mono', 'Courier New', monospace",
                   }}
                 >
-                  <span style={{ fontSize: '8px', color: item.accent, lineHeight: 1 }}>{item.icon}</span>
-                  <span style={{ fontSize: '8px', fontWeight: 'bold', letterSpacing: '1px', color: item.accent }}>{item.label}</span>
-                  <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: item.accent }} />
+                  <span style={{ fontSize: '9px', color: item.accent, lineHeight: 1, textShadow: `0 0 8px ${item.accent}` }}>
+                    {item.icon}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '8.5px',
+                      fontWeight: 'bold',
+                      letterSpacing: '1.2px',
+                      color: '#ffffff',
+                      textShadow: `0 0 8px ${item.accent}`,
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                  <span
+                    style={{
+                      width: '3.5px',
+                      height: '3.5px',
+                      borderRadius: '50%',
+                      background: item.accent,
+                      boxShadow: `0 0 6px ${item.accent}`,
+                    }}
+                  />
                 </div>
               </Html>
             </group>
