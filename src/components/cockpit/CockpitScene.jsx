@@ -4,7 +4,8 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { getGPUTier } from 'detect-gpu';
 import { useCockpitStore } from '../../store/cockpitStore';
 import { BackgroundMatrix3D } from './BackgroundMatrix3D';
-import { HumanWireframeAvatar } from './HumanWireframeAvatar';
+import { GlbWireframeAvatar } from './GlbWireframeAvatar';
+import { AvatarPedestal } from './AvatarPedestal';
 import { OrbitPanelRing } from './OrbitPanelRing';
 
 function TelemetryTracker() {
@@ -170,10 +171,13 @@ export function CockpitScene({ children }) {
         {/* 3D Background Matrix Environment */}
         <BackgroundMatrix3D particleCount={particleCount} />
 
-        {/* Central 100% Fidelity Male Humanoid Wireframe Avatar & Scanner Base */}
+        {/* Central GLB Wireframe Avatar */}
         <Suspense fallback={null}>
-          <HumanWireframeAvatar position={[0, -0.9, 0]} scale={1.0} />
+          <GlbWireframeAvatar position={[0, -0.9, 0]} scale={1.0} />
         </Suspense>
+
+        {/* Decorative Pedestal: gyro rings, scanner base, pointer ticks */}
+        <AvatarPedestal position={[0, -0.9, 0]} scale={1.0} />
 
         {/* Cylindrical 360 Orbit Panel Ring */}
         <OrbitPanelRing />

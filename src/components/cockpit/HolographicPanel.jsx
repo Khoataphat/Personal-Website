@@ -12,6 +12,7 @@ export function HolographicPanel({
   icon: Icon,
   details = [],
   summary,
+  children,
 }) {
   const scale = isActive ? 1.06 : 0.86;
   const opacity = isActive ? 1.0 : 0.45;
@@ -66,8 +67,11 @@ export function HolographicPanel({
           center
           position={[0, -0.05, 0.05]}
           distanceFactor={4.8}
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
+          onWheel={(e) => e.stopPropagation()}
           style={{
-            width: '260px',
+            width: '270px',
             opacity,
             transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
             pointerEvents: isActive ? 'auto' : 'none',
@@ -75,7 +79,10 @@ export function HolographicPanel({
           transform
         >
           <div
-            className={`p-3.5 rounded-xl backdrop-blur-xl border transition-all duration-300 font-mono text-left select-none ${
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
+            onWheel={(e) => e.stopPropagation()}
+            className={`p-3.5 rounded-xl backdrop-blur-xl border transition-all duration-300 font-mono text-left select-none pointer-events-auto ${
               isActive
                 ? 'bg-[#080b14]/90 border-[#00f2fe]/60 shadow-[0_0_30px_rgba(0,242,254,0.25)] ring-1 ring-[#00f2fe]/30'
                 : 'bg-[#05070d]/75 border-[#7928ca]/30 shadow-lg'
@@ -97,37 +104,36 @@ export function HolographicPanel({
               </span>
             </div>
 
-            {/* SubLabel / Title */}
-            <div className="text-sm font-bold text-white tracking-wide mb-1.5 flex items-center gap-2">
-              {Icon && <Icon className="w-4 h-4 text-[#00f2fe]" />}
-              <span>{subLabel}</span>
-            </div>
+            {/* Custom Rich Children or Fallback Card */}
+            {children ? (
+              children
+            ) : (
+              <>
+                {/* SubLabel / Title */}
+                <div className="text-sm font-bold text-white tracking-wide mb-1.5 flex items-center gap-2">
+                  {Icon && <Icon className="w-4 h-4 text-[#00f2fe]" />}
+                  <span>{subLabel}</span>
+                </div>
 
-            {/* Summary / Description */}
-            <p className="text-[11px] text-zinc-300 leading-relaxed mb-2.5 line-clamp-3">
-              {summary}
-            </p>
+                {/* Summary / Description */}
+                <p className="text-[11px] text-zinc-300 leading-relaxed mb-2.5 line-clamp-3">
+                  {summary}
+                </p>
 
-            {/* Details / Tag list */}
-            {details.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 pt-1.5 border-t border-white/10">
-                {details.map((item, idx) => (
-                  <span
-                    key={idx}
-                    className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-300 border border-white/10 font-mono"
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Active Action Cue */}
-            {isActive && (
-              <div className="mt-2.5 text-[10px] text-[#00f2fe] flex items-center justify-between font-bold pt-1.5 border-t border-[#00f2fe]/20">
-                <span className="tracking-wider">INTERACT MODULE</span>
-                <span className="text-xs">[↵]</span>
-              </div>
+                {/* Details / Tag list */}
+                {details.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1.5 border-t border-white/10">
+                    {details.map((item, idx) => (
+                      <span
+                        key={idx}
+                        className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-300 border border-white/10 font-mono"
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </Html>

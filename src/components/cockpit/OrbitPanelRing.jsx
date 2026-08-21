@@ -5,47 +5,26 @@ import { HolographicPanel } from './HolographicPanel';
 import { soundFx } from '../../services/soundFx';
 import { User, Cpu, FolderGit2, BookOpen, Send } from 'lucide-react';
 
+import { PanelContentAbout } from './panels/PanelContentAbout';
+import { PanelContentSkills } from './panels/PanelContentSkills';
+import { PanelContentProjects } from './panels/PanelContentProjects';
+import { PanelContentBlog } from './panels/PanelContentBlog';
+import { PanelContentContact } from './panels/PanelContentContact';
+
+const PANEL_COMPONENTS = [
+  PanelContentAbout,
+  PanelContentSkills,
+  PanelContentProjects,
+  PanelContentBlog,
+  PanelContentContact,
+];
+
 const PANELS = [
-  {
-    id: 0,
-    label: 'ABOUT',
-    subLabel: 'Origin & Philosophy',
-    icon: User,
-    summary: 'Kỹ sư phần mềm AI & Fullstack, kiến tạo giải pháp số thông minh và trải nghiệm tương tác trực quan điện ảnh.',
-    details: ['Architecture', 'Fullstack & AI', 'Hanoi, VN'],
-  },
-  {
-    id: 1,
-    label: 'SKILLS',
-    subLabel: 'Tech Arsenal',
-    icon: Cpu,
-    summary: 'Hệ sinh thái công nghệ đa tầng từ React, Three.js, Node.js đến Python, AI Engine và Cloud Infrastructure.',
-    details: ['React & WebGL', 'Node.js / Python', 'Docker & Cloud'],
-  },
-  {
-    id: 2,
-    label: 'PROJECTS',
-    subLabel: 'Key Operations',
-    icon: FolderGit2,
-    summary: 'Tuyển tập 4 dự án quy mô với kiến trúc mở rộng cao, tối ưu hóa thuật toán và hồ sơ kỹ thuật STAR chuẩn mực.',
-    details: ['STAR Method', 'High Scalability', 'PDF Whitepapers'],
-  },
-  {
-    id: 3,
-    label: 'BLOG',
-    subLabel: 'Tech Chronicles',
-    icon: BookOpen,
-    summary: 'Các bài viết nghiên cứu chuyên sâu về tối ưu hiệu năng WebGL 3D, kiến trúc AI Agent và Clean Architecture.',
-    details: ['Shader Dev', 'AI Multi-Agent', 'Clean Arch'],
-  },
-  {
-    id: 4,
-    label: 'CONTACT',
-    subLabel: 'Transmission Link',
-    icon: Send,
-    summary: 'Cổng truyền thông tin trực tiếp, tải xuống CV kỹ sư chuyên nghiệp và kết nối mạng lưới kênh bảo mật.',
-    details: ['Direct EmailJS', 'Instant CV Download', 'Encrypted Link'],
-  },
+  { id: 0, label: 'ABOUT', subLabel: 'Operator Profile', icon: User },
+  { id: 1, label: 'SKILLS', subLabel: 'Tech Arsenal', icon: Cpu },
+  { id: 2, label: 'PROJECTS', subLabel: 'Major Systems', icon: FolderGit2 },
+  { id: 3, label: 'BLOG', subLabel: 'Tech Chronicles', icon: BookOpen },
+  { id: 4, label: 'CONTACT', subLabel: 'Transmission Link', icon: Send },
 ];
 
 const N = 5;
@@ -64,6 +43,8 @@ export function OrbitPanelRing() {
   const lastPointerXRef = useRef(0);
   const lastActiveIndexRef = useRef(0);
 
+  const dragDistanceRef = useRef(0);
+
   // Helper to snap to specific panel index
   const snapToPanel = (index) => {
     targetAngleRef.current = -index * STEP;
@@ -80,6 +61,9 @@ export function OrbitPanelRing() {
   // Keyboard navigation (1-5 and Arrow keys)
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Don't capture keys if typing inside input or textarea
+      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
       if (e.key >= '1' && e.key <= '5') {
         const idx = parseInt(e.key, 10) - 1;
         snapToPanel(idx);
@@ -101,6 +85,10 @@ export function OrbitPanelRing() {
   // Scroll wheel rotation on window
   useEffect(() => {
     const handleWheel = (e) => {
+      // If scrolling inside an overflow card list or modal, let the DOM scroll natively!
+      if (e.target && e.target.closest && e.target.closest('.overflow-y-auto, .overflow-auto, textarea, iframe, .prose')) {
+        return;
+      }
       e.preventDefault();
       velocityRef.current += e.deltaY * 0.0008;
     };
@@ -109,28 +97,41 @@ export function OrbitPanelRing() {
     return () => window.removeEventListener('wheel', handleWheel);
   }, []);
 
-  // Pointer Drag on window
+  // Pointer Drag on window (with interactive element safeguard)
   useEffect(() => {
     const handlePointerDown = (e) => {
+      // If clicking interactive DOM elements inside cards or HUD, don't initiate ring drag
+      if (
+        e.target &&
+        e.target.closest &&
+        e.target.closest('button, input, textarea, a, select, [role="button"], iframe, .pointer-events-auto')
+      ) {
+        return;
+      }
       isDraggingRef.current = true;
       lastPointerXRef.current = e.clientX;
+      dragDistanceRef.current = 0;
     };
 
     const handlePointerMove = (e) => {
       if (!isDraggingRef.current) return;
       const deltaX = e.clientX - lastPointerXRef.current;
+      if (Math.abs(deltaX) < 1) return;
       lastPointerXRef.current = e.clientX;
       angleRef.current += deltaX * 0.0035;
       targetAngleRef.current = angleRef.current;
+      dragDistanceRef.current += Math.abs(deltaX);
     };
 
     const handlePointerUp = () => {
       if (!isDraggingRef.current) return;
       isDraggingRef.current = false;
-      // Auto-snap to closest panel index after release
-      const currentRawIndex = -angleRef.current / STEP;
-      const closestIndex = Math.round(currentRawIndex);
-      targetAngleRef.current = closestIndex * STEP;
+      // Only snap if user actually dragged
+      if (dragDistanceRef.current > 4) {
+        const currentRawIndex = -angleRef.current / STEP;
+        const closestIndex = Math.round(currentRawIndex);
+        targetAngleRef.current = closestIndex * STEP;
+      }
     };
 
     window.addEventListener('pointerdown', handlePointerDown);
@@ -178,6 +179,7 @@ export function OrbitPanelRing() {
         const rotY = theta;
         const isActive = activePanel === i;
         const isFrontFacing = Math.cos(theta) > -0.3;
+        const PanelComp = PANEL_COMPONENTS[i];
 
         return (
           <group key={panel.id} position={[x, y, z]} rotation={[0, rotY, 0]}>
@@ -188,9 +190,9 @@ export function OrbitPanelRing() {
               isActive={isActive}
               isFrontFacing={isFrontFacing}
               icon={panel.icon}
-              summary={panel.summary}
-              details={panel.details}
-            />
+            >
+              <PanelComp />
+            </HolographicPanel>
           </group>
         );
       })}

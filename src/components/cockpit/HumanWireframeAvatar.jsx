@@ -1,3 +1,8 @@
+/**
+ * @deprecated Replaced by GlbWireframeAvatar (GLB-based wireframe).
+ * Kept as procedural fallback reference. Do NOT import in CockpitScene.
+ * Decorative elements (rings, pedestal) have been moved to AvatarPedestal.jsx.
+ */
 import React, { useRef, useMemo } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
