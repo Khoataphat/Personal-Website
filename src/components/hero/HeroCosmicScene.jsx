@@ -39,27 +39,101 @@ function TelemetryTracker() {
 /**
  * Hero Camera Rig
  *
- * Cinematic Ultra Close-up Framing (z = 1.95):
- *   - Camera at z = 1.95, y = 0.02
- *   - LookAt at y = 0.02
- *   - Model fills maximum viewport height: head right below TopNav, hand at bottom edge
+ * WASD & QE Inspection Orbit Controls:
+ *   - A / D (or ArrowLeft / ArrowRight): Horizontal 360° Orbit (Azimuth angle)
+ *   - W / S (or ArrowUp / ArrowDown): Vertical Height / Pitch Angle (Polar angle)
+ *   - Q / E (or PageUp / PageDown): Zoom In / Zoom Out (Distance radius)
+ *   - Clean stationary focal target at (0, 0.02, 0)
  */
 function HeroCameraRig() {
+  const keysRef = useRef({
+    w: false,
+    s: false,
+    a: false,
+    d: false,
+    q: false,
+    e: false,
+  });
+
+  const sphericalRef = useRef({
+    radius: 1.95,
+    phi: Math.PI / 2, // 90° (eye level)
+    theta: 0,         // front facing
+  });
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const key = e.key.toLowerCase();
+      if (key === 'w' || key === 'arrowup') keysRef.current.w = true;
+      if (key === 's' || key === 'arrowdown') keysRef.current.s = true;
+      if (key === 'a' || key === 'arrowleft') keysRef.current.a = true;
+      if (key === 'd' || key === 'arrowright') keysRef.current.d = true;
+      if (key === 'q' || key === 'pageup') keysRef.current.q = true;
+      if (key === 'e' || key === 'pagedown') keysRef.current.e = true;
+    };
+
+    const handleKeyUp = (e) => {
+      const key = e.key.toLowerCase();
+      if (key === 'w' || key === 'arrowup') keysRef.current.w = false;
+      if (key === 's' || key === 'arrowdown') keysRef.current.s = false;
+      if (key === 'a' || key === 'arrowleft') keysRef.current.a = false;
+      if (key === 'd' || key === 'arrowright') keysRef.current.d = false;
+      if (key === 'q' || key === 'pageup') keysRef.current.q = false;
+      if (key === 'e' || key === 'pagedown') keysRef.current.e = false;
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
   useFrame(({ camera }, delta) => {
-    const mouse = useCockpitStore.getState().mouseNorm;
+    const keys = keysRef.current;
+    const s = sphericalRef.current;
 
-    const targetZ = 1.95;
-    const targetY = 0.02;
+    // Movement speeds
+    const orbitSpeed = 2.0;  // rad/s
+    const pitchSpeed = 1.6;  // rad/s
+    const zoomSpeed = 2.4;   // units/s
+
+    // Horizontal Orbit: A rotates left, D rotates right
+    if (keys.a) s.theta -= orbitSpeed * delta;
+    if (keys.d) s.theta += orbitSpeed * delta;
+
+    // Vertical Orbit: W pitches up (decreases phi towards apex), S pitches down (increases phi towards base)
+    if (keys.w) s.phi -= pitchSpeed * delta;
+    if (keys.s) s.phi += pitchSpeed * delta;
+    s.phi = Math.max(0.05, Math.min(Math.PI - 0.05, s.phi));
+
+    // Zoom: Q zooms in (closer), E zooms out (further)
+    if (keys.q) s.radius -= zoomSpeed * delta;
+    if (keys.e) s.radius += zoomSpeed * delta;
+    s.radius = Math.max(0.35, Math.min(12.0, s.radius));
+
     const targetX = 0;
+    const targetY = 0.02;
+    const targetZ = 0;
 
-    const finalX = targetX + mouse.x * 0.04;
-    const finalY = targetY + mouse.y * 0.02;
+    // Spherical to Cartesian calculation
+    const sinPhi = Math.sin(s.phi);
+    const cosPhi = Math.cos(s.phi);
+    const sinTheta = Math.sin(s.theta);
+    const cosTheta = Math.cos(s.theta);
 
-    camera.position.x += (finalX - camera.position.x) * Math.min(1, delta * 6);
-    camera.position.y += (finalY - camera.position.y) * Math.min(1, delta * 6);
-    camera.position.z += (targetZ - camera.position.z) * Math.min(1, delta * 6);
+    const destX = targetX + s.radius * sinPhi * sinTheta;
+    const destY = targetY + s.radius * cosPhi;
+    const destZ = targetZ + s.radius * sinPhi * cosTheta;
 
-    camera.lookAt(0, 0.02, 0);
+    // Smooth camera transition
+    const lerpFactor = Math.min(1, delta * 12);
+    camera.position.x += (destX - camera.position.x) * lerpFactor;
+    camera.position.y += (destY - camera.position.y) * lerpFactor;
+    camera.position.z += (destZ - camera.position.z) * lerpFactor;
+
+    camera.lookAt(targetX, targetY, targetZ);
   });
 
   return null;

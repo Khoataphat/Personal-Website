@@ -3,7 +3,6 @@ import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 
 export function BackgroundMatrix3D({ particleCount = 500 }) {
-  const laserRef = useRef();
   const instancedRef = useRef();
 
   // Create dummy object for calculating instance transformation matrices
@@ -28,12 +27,7 @@ export function BackgroundMatrix3D({ particleCount = 500 }) {
   useFrame(({ clock }) => {
     const elapsed = clock.getElapsedTime();
 
-    // 1. Laser Sweep Plane oscillation
-    if (laserRef.current) {
-      laserRef.current.position.y = Math.sin(elapsed * 0.4) * 2.5;
-    }
-
-    // 2. GPU InstancedMesh Particles floating animation
+    // GPU InstancedMesh Particles floating animation
     if (instancedRef.current) {
       for (let i = 0; i < particleCount; i++) {
         const p = particles[i];
@@ -61,17 +55,6 @@ export function BackgroundMatrix3D({ particleCount = 500 }) {
           <meshBasicMaterial color="#00f2fe" transparent opacity={0.15} />
         </gridHelper>
       </group>
-
-      {/* Layer 2: Glowing Laser Sweep Plane */}
-      <mesh ref={laserRef} position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[35, 0.04]} />
-        <meshBasicMaterial
-          color="#00f2fe"
-          transparent
-          opacity={0.65}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
 
       {/* Layer 3: GPU Instanced Neon Particles */}
       <instancedMesh
