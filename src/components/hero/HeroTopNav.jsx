@@ -23,15 +23,29 @@ export function HeroTopNav() {
   const isAudioMuted = useCockpitStore((s) => s.isAudioMuted);
   const toggleMute = useCockpitStore((s) => s.toggleMute);
   const telemetry = useCockpitStore((s) => s.telemetry);
-  const activeCard = useCockpitStore((s) => s.activeCard);
-  const isCardExpanded = useCockpitStore((s) => s.isCardExpanded);
-  const setActiveCard = useCockpitStore((s) => s.setActiveCard);
-  const setIsCardExpanded = useCockpitStore((s) => s.setIsCardExpanded);
+  
+  const isDossierOpen = useCockpitStore((s) => s.isDossierOpen);
+  const activeDossierTab = useCockpitStore((s) => s.activeDossierTab);
+  const openDossier = useCockpitStore((s) => s.openDossier);
+  const closeDossier = useCockpitStore((s) => s.closeDossier);
+  const switchDossierTab = useCockpitStore((s) => s.switchDossierTab);
 
   const handleNavClick = (id) => {
     soundFx.playDockClick?.();
-    setActiveCard(id);
-    setIsCardExpanded(true);
+    const state = useCockpitStore.getState();
+    if (!state.isDossierOpen) {
+      state.openDossier?.(id);
+    } else {
+      state.switchDossierTab?.(id);
+    }
+  };
+
+  const handleBrandClick = () => {
+    const state = useCockpitStore.getState();
+    if (state.isDossierOpen) {
+      soundFx.playClose?.();
+      state.closeDossier?.();
+    }
   };
 
   const handleMuteClick = () => {
@@ -55,7 +69,11 @@ export function HeroTopNav() {
         }}
       >
         {/* ── Logo / Brand ─────────────────────────────────── */}
-        <div className="flex items-center gap-3">
+        <div
+          onClick={handleBrandClick}
+          className="flex items-center gap-3 cursor-pointer group"
+          title={isDossierOpen ? "Return to Cosmos Hero" : "Dang Khoa Sovereign System"}
+        >
           <div
             style={{
               width: '28px',
@@ -66,7 +84,9 @@ export function HeroTopNav() {
               alignItems: 'center',
               justifyContent: 'center',
               boxShadow: '0 0 10px rgba(0,242,254,0.4)',
+              transition: 'all 0.2s',
             }}
+            className="group-hover:border-white group-hover:scale-105"
           >
             <span style={{ color: '#00f2fe', fontSize: '14px', fontWeight: 'bold', lineHeight: 1 }}>K</span>
           </div>
@@ -90,31 +110,32 @@ export function HeroTopNav() {
                 opacity: 0.7,
               }}
             >
-              {telemetry.fps > 0 ? `FPS: ${telemetry.fps} · ` : ''}{telemetry.utcClock || 'SYSTEM ONLINE'}
+              {telemetry.fps > 0 ? `FPS: ${telemetry.fps} · ` : ''}{isDossierOpen ? 'EDITORIAL ACTIVE' : (telemetry.utcClock || 'SYSTEM ONLINE')}
             </div>
           </div>
         </div>
 
-        {/* ── Nav Links (Clicking opens ExpandedDetailModal) ── */}
-        <div className="hidden sm:flex items-center gap-1.5">
+        {/* ── Nav Links (Clicking opens/switches Minimalist Editorial Dossier) ── */}
+        <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto max-w-[65vw] sm:max-w-none no-scrollbar py-1">
           {NAV_ITEMS.map((item) => {
-            const isActive = isCardExpanded && activeCard === item.id;
+            const isActive = isDossierOpen && activeDossierTab === item.id;
             return (
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
                 style={{
-                  background: isActive ? 'rgba(0,242,254,0.15)' : 'transparent',
-                  border: `1px solid ${isActive ? 'rgba(0,242,254,0.6)' : 'rgba(255,255,255,0.06)'}`,
+                  background: isActive ? 'rgba(0,242,254,0.18)' : 'transparent',
+                  border: `1px solid ${isActive ? 'rgba(0,242,254,0.7)' : 'rgba(255,255,255,0.06)'}`,
                   borderRadius: '6px',
                   color: isActive ? '#00f2fe' : 'rgba(255,255,255,0.7)',
                   fontSize: '10px',
                   letterSpacing: '2px',
-                  padding: '6px 14px',
+                  padding: '6px 12px',
                   cursor: 'pointer',
                   transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
-                  textShadow: isActive ? '0 0 8px rgba(0,242,254,0.6)' : 'none',
+                  textShadow: isActive ? '0 0 10px rgba(0,242,254,0.7)' : 'none',
                   fontFamily: 'inherit',
+                  whiteSpace: 'nowrap',
                 }}
                 onMouseOver={(e) => {
                   if (!isActive) {

@@ -204,9 +204,10 @@ export function HeroBackgroundTypography() {
  */
 export function HeroForegroundHUD() {
   const [mounted, setMounted] = useState(false);
-  const activeCard = useCockpitStore((s) => s.activeCard);
-  const setActiveCard = useCockpitStore((s) => s.setActiveCard);
-  const setIsCardExpanded = useCockpitStore((s) => s.setIsCardExpanded);
+  const isDossierOpen = useCockpitStore((s) => s.isDossierOpen);
+  const activeDossierTab = useCockpitStore((s) => s.activeDossierTab);
+  const openDossier = useCockpitStore((s) => s.openDossier);
+  const switchDossierTab = useCockpitStore((s) => s.switchDossierTab);
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 200);
@@ -214,8 +215,11 @@ export function HeroForegroundHUD() {
   }, []);
 
   const handleIndicatorClick = (i) => {
-    setActiveCard(i);
-    setIsCardExpanded(true);
+    if (!isDossierOpen) {
+      openDossier(i);
+    } else {
+      switchDossierTab(i);
+    }
   };
 
   return (
@@ -303,7 +307,7 @@ export function HeroForegroundHUD() {
         }}
       >
         {VERTICAL_INDICATORS.map((num, i) => {
-          const isActive = activeCard === i;
+          const isActive = isDossierOpen && activeDossierTab === i;
           return (
             <button
               key={i}

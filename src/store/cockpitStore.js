@@ -53,9 +53,25 @@ export const useCockpitStore = create((set) => ({
   // discAngle: current rotation angle (radians) of the accretion disc orbit
   discAngle: 0,
   setDiscAngle: (a) => set({ discAngle: a }),
+
+  // ── Minimalist Dark Editorial Dossier State ──────────────────────────
+  isDossierOpen: false,
+  activeDossierTab: 0, // 0=About, 1=Skills, 2=Work, 3=Blog, 4=Contact
+  openDossier: (tabIndex = 0) => set({
+    isDossierOpen: true,
+    activeDossierTab: tabIndex,
+    activeCard: tabIndex,
+    isCardExpanded: false,
+  }),
+  closeDossier: () => set({ isDossierOpen: false }),
+  switchDossierTab: (tabIndex) => set({
+    activeDossierTab: tabIndex,
+    activeCard: tabIndex,
+  }),
 }));
 
 // Expose store globally in development mode for easy DevTools inspection
 if (typeof window !== 'undefined') {
   window.useCockpitStore = useCockpitStore;
 }
+

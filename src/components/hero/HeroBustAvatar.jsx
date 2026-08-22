@@ -466,14 +466,15 @@ function CurvedCyberCard({ item, radius, arcAngle = 0.74, height = 0.046 }) {
 }
 
 /**
- * Procedural Cyber Voronoi Shader with 3D Surface Relief Lighting, Eye Framing & Soft Skinning Neck
+ * Procedural 2x2 Twill Carbon Weave & Razor-Thin Nano Laser Traces Shader
  */
 function createProceduralCyberShaderMaterial({
   baseColor = '#05020a',
   lineColor = '#C084FC',
   rimColor = '#9333EA',
-  scale = 16.0,
-  lineWidth = 0.035,
+  viaColor = '#FFB703',
+  scale = 26.0,
+  lineWidth = 0.014,
   glow = 1.85,
   bilateral = true,
   isMask = false,
@@ -521,10 +522,12 @@ function createProceduralCyberShaderMaterial({
     uniform vec3 uBaseColor;
     uniform vec3 uLineColor;
     uniform vec3 uRimColor;
+    uniform vec3 uViaColor;
     uniform float uScale;
     uniform float uLineWidth;
     uniform float uGlow;
     uniform float uTime;
+    uniform float uMouseSpeed;
     uniform float uBilateral;
     uniform float uIsMask;
     uniform vec3 uEyeCenters[6];
@@ -536,29 +539,62 @@ function createProceduralCyberShaderMaterial({
     varying vec3 vNormal;
     varying vec3 vViewPosition;
 
+    // High precision pseudo-random generator
     vec3 hash33(vec3 p) {
       p = fract(p * vec3(0.1031, 0.1030, 0.0973));
       p += dot(p, p.yxz + 33.33);
       return fract((p.xxy + p.yxx) * p.zyx);
     }
 
-    vec2 voronoi3D(vec3 x) {
-      vec3 p = floor(x);
-      vec3 f = fract(x);
-      float d1 = 8.0;
-      float d2 = 8.0;
-      for (int k = -1; k <= 1; k++) {
-        for (int j = -1; j <= 1; j++) {
-          for (int i = -1; i <= 1; i++) {
-            vec3 b = vec3(float(i), float(j), float(k));
-            vec3 r = vec3(b) - f + hash33(p + b);
-            float d = dot(r, r);
-            if (d < d1) { d2 = d1; d1 = d; }
-            else if (d < d2) { d2 = d; }
-          }
-        }
+    // 2x2 Twill Carbon Weave Pattern & Micro-facet Normal Perturbation
+    // Returns: vec3(yarnHeight, yarnCurve, isWarp ? 1.0 : 0.0)
+    vec3 evaluate2x2TwillCarbon(vec2 uv) {
+      // 45-degree diagonal rotation for classic twill weave orientation
+      vec2 rotUV = vec2(uv.x + uv.y, uv.y - uv.x) * 0.70710678 * 1.8;
+
+      vec2 cellId = floor(rotUV);
+      vec2 cellUv = fract(rotUV);
+
+      // In a 2x2 twill weave, the interlacing pattern has a period of 4
+      float pattern = mod(cellId.x - cellId.y, 4.0);
+      bool isWarp = (pattern < 2.0);
+
+      // Smooth parabolic cylindrical profile across yarn width
+      float uCoord = isWarp ? cellUv.x : cellUv.y;
+      float yarnCurve = sin(uCoord * 3.14159265);
+      float yarnHeight = pow(yarnCurve, 0.55);
+
+      // Subtle micro-fiber striation along yarn length
+      float vCoord = isWarp ? rotUV.y : rotUV.x;
+      float microFiber = sin(vCoord * 18.84955) * 0.04;
+
+      return vec3(yarnHeight + microFiber, yarnCurve, isWarp ? 1.0 : 0.0);
+    }
+
+    // Sparse, Razor-Thin Nano Laser Traces (No big blobs, perfectly clean)
+    float evaluateNanoLaserTraces(vec2 uv) {
+      vec2 grid = floor(uv * 0.35);
+      vec2 local = fract(uv * 0.35);
+      vec3 rnd = hash33(vec3(grid, 31.7));
+
+      float minD = 10.0;
+
+      // Selectively draw clean, sparse parallel and 45° bus lines
+      if (rnd.x > 0.58) {
+        float lineY = 0.25 + floor(rnd.y * 2.0) * 0.5;
+        minD = min(minD, abs(local.y - lineY));
       }
-      return vec2(sqrt(max(d1, 0.0)), sqrt(max(d2, 0.0)));
+      if (rnd.y > 0.62) {
+        float lineX = 0.25 + floor(rnd.z * 2.0) * 0.5;
+        minD = min(minD, abs(local.x - lineX));
+      }
+      if (rnd.z > 0.72) {
+        // Clean 45-degree diagonal jumper
+        float dDiag = abs((local.x - local.y)) * 0.70710678;
+        minD = min(minD, dDiag);
+      }
+
+      return minD;
     }
 
     void main() {
@@ -567,14 +603,42 @@ function createProceduralCyberShaderMaterial({
         pos.x = abs(pos.x);
       }
 
-      // Compute Voronoi boundary
-      vec2 v = voronoi3D(pos);
-      float edgeDist = v.y - v.x;
-      float lineFactor = 1.0 - smoothstep(0.0, uLineWidth, edgeDist);
+      vec3 norm = normalize(vNormal);
 
-      // Breathing glow
-      float breath = 0.90 + 0.10 * sin(uTime * 0.75);
-      float currentGlow = uGlow * breath;
+      // Sharp Dominant-Axis Triplanar Projection
+      vec3 blendWeight = pow(abs(norm), vec3(6.0));
+      blendWeight /= (blendWeight.x + blendWeight.y + blendWeight.z + 0.0001);
+
+      // 1. Carbon Weave Evaluation
+      vec3 cX = evaluate2x2TwillCarbon(pos.yz);
+      vec3 cY = evaluate2x2TwillCarbon(pos.xz);
+      vec3 cZ = evaluate2x2TwillCarbon(pos.xy);
+      float carbonHeight = cX.x * blendWeight.x + cY.x * blendWeight.y + cZ.x * blendWeight.z;
+      float yarnCurve = cX.y * blendWeight.x + cY.y * blendWeight.y + cZ.y * blendWeight.z;
+
+      // 2. Nano Laser Traces
+      float dX = evaluateNanoLaserTraces(pos.yz);
+      float dY = evaluateNanoLaserTraces(pos.xz);
+      float dZ = evaluateNanoLaserTraces(pos.xy);
+      float minLaser = dX * blendWeight.x + dY * blendWeight.y + dZ * blendWeight.z;
+
+      // Razor-sharp nano laser line factor (super thin & crisp)
+      float laserFactor = 1.0 - smoothstep(0.0, uLineWidth, minLaser);
+
+      // 3. Diagnostic Nano Energy Pulse Wave (~4.5s cycle)
+      float scanCycle = 4.5;
+      float scanProg = fract(uTime / scanCycle);
+      float scanY = mix(-1.4, 1.8, scanProg);
+      float distY = vLocalPosition.y - scanY;
+
+      float scanWave = 0.0;
+      if (distY <= 0.05 && distY > -0.65) {
+        float wProgress = (distY + 0.65) / 0.70;
+        scanWave = pow(sin(wProgress * 3.14159 * 0.5), 2.0);
+      }
+
+      float breath = 0.94 + 0.06 * sin(uTime * 0.75);
+      float laserGlow = (uGlow * breath + scanWave * 1.8 + uMouseSpeed * 0.25);
 
       // ── Voronoi Eye Framing & Organic Eyelid 3D Relief ─────────────
       vec3 eyelidNormalBump = vec3(0.0);
@@ -596,54 +660,41 @@ function createProceduralCyberShaderMaterial({
           float normW = abs(w) / max(b, 0.001);
           float M = pow(pow(normU, 2.2) + pow(normW, 2.2), 1.0 / 2.2);
 
-          // Direction pointing outward from eye center in local tangent plane
           vec3 gradDir = normalize(uEyeT[i] * (u / max(a * a, 0.0001)) + uEyeB[i] * (w / max(b * b, 0.0001)));
 
           // 1. Deep Socket Ambient Occlusion (darkens deep inside socket hole)
           float currentAO = smoothstep(0.82, 1.12, M);
           socketAO = min(socketAO, currentAO);
 
-          // 2. Cut out random Voronoi cracks crossing inside the socket
+          // 2. Cut out random laser traces inside the socket hole
           float cutHole = 1.0 - smoothstep(0.85, 1.15, M);
           insideSocketMask = max(insideSocketMask, cutHole);
 
-          // 3. Eyelid 3D Relief Normal Perturbation (Slope dH/dM)
+          // 3. Eyelid 3D Relief Normal Perturbation
           float slope = 0.0;
           if (M >= 0.88 && M < 1.22) {
-            // Rising slope: inner eyelid wall climbing to peak ridge
             slope = sin((M - 0.88) / 0.34 * 3.14159) * 0.85;
           } else if (M >= 1.22 && M < 1.62) {
-            // Falling slope: outer eyelid flank sloping down to mask base
             slope = -sin((M - 1.22) / 0.40 * 3.14159) * 0.65;
           } else if (M >= 1.62 && M < 1.98) {
-            // Secondary crease ripple (upper eyelid fold / lower pouch)
             slope = sin((M - 1.62) / 0.36 * 6.28318) * 0.30;
           }
           eyelidNormalBump += gradDir * slope;
 
-          // 4. Multi-Tier Organic Crease Glow Lines
-          // Inner rim glow at socket lip (M = 0.96)
-          float innerLip = (1.0 - smoothstep(0.0, uLineWidth * 1.3, abs(M - 0.96))) * 0.55;
-          // Primary eyelid peak ridge glow (M = 1.22)
-          float peakRidge = (1.0 - smoothstep(0.0, uLineWidth * 1.6, abs(M - 1.22))) * 1.45;
-          // Secondary double eyelid crease glow (M = 1.62)
-          float outerFold = (1.0 - smoothstep(0.0, uLineWidth * 1.4, abs(M - 1.62))) * 0.85;
+          // 4. Razor-Thin Eyelid Contour Glow Lines
+          float innerLip = (1.0 - smoothstep(0.0, uLineWidth * 1.2, abs(M - 0.96))) * 0.60;
+          float peakRidge = (1.0 - smoothstep(0.0, uLineWidth * 1.5, abs(M - 1.22))) * 1.35;
+          float outerFold = (1.0 - smoothstep(0.0, uLineWidth * 1.3, abs(M - 1.62))) * 0.75;
 
-          // Subtle organic micro-spokes between inner lip and peak ridge
-          float angle = atan(w, u);
-          float spoke = pow(max(0.0, sin(angle * 8.0)), 6.0) * step(0.96, M) * step(M, 1.22) * 0.40;
-
-          float eyeContour = max(max(peakRidge, outerFold), innerLip) + spoke;
+          float eyeContour = max(max(peakRidge, outerFold), innerLip);
           eyelidGlow = max(eyelidGlow, eyeContour);
         }
 
-        // Apply Voronoi crack repulsion and blend in multi-tier eyelid contours
-        lineFactor = mix(lineFactor, 0.0, insideSocketMask);
-        lineFactor = max(lineFactor, eyelidGlow);
+        laserFactor = mix(laserFactor, 0.0, insideSocketMask);
+        laserFactor = max(laserFactor, eyelidGlow);
       }
 
-      // ── 3D Surface Relief Lighting (Reveals Sculpted Eyelids & Sockets) ──
-      vec3 norm = normalize(vNormal);
+      // ── 3D Surface Relief Lighting & Anisotropic Carbon Specular Sheen ──
       vec3 perturbedNorm = normalize(norm + eyelidNormalBump * 0.90);
       vec3 viewDir = normalize(vViewPosition);
 
@@ -651,25 +702,28 @@ function createProceduralCyberShaderMaterial({
       vec3 light2 = normalize(vec3(-0.5, 0.3, 0.7));
       float diff1 = max(dot(perturbedNorm, light1), 0.0);
       float diff2 = max(dot(perturbedNorm, light2), 0.0);
-      float lighting = 0.25 + diff1 * 0.55 + diff2 * 0.30;
+      float lighting = 0.20 + diff1 * 0.55 + diff2 * 0.30;
 
-      // Obsidian specular sheen (reacts dynamically to sculpted eyelid curves)
+      // Anisotropic Specular Highlights on 2x2 Twill Carbon Fibers
       vec3 half1 = normalize(light1 + viewDir);
-      float spec = pow(max(dot(perturbedNorm, half1), 0.0), 22.0) * 0.65;
       vec3 half2 = normalize(light2 + viewDir);
-      float spec2 = pow(max(dot(perturbedNorm, half2), 0.0), 16.0) * 0.35;
+      float spec1 = pow(max(dot(perturbedNorm, half1), 0.0), 28.0) * (0.35 + 0.65 * yarnCurve);
+      float spec2 = pow(max(dot(perturbedNorm, half2), 0.0), 18.0) * 0.30;
 
       // Fresnel edge rim glow
       float fresnel = pow(1.0 - max(dot(viewDir, perturbedNorm), 0.0), 2.5);
 
-      // Dynamic specular sheen matching each component's distinct accent color
-      vec3 specColor = mix(vec3(1.0), uRimColor, 0.45);
-      vec3 specularSheen = specColor * (spec * 0.70 + spec2 * 0.35);
+      // Deep Obsidian Base Tint with subtle carbon weave micro-shading
+      vec3 carbonBase = uBaseColor * (lighting + carbonHeight * 0.35);
+      vec3 specSheen = mix(vec3(0.85, 0.92, 1.0), uRimColor, 0.35) * (spec1 * 0.75 + spec2 * 0.35);
 
-      // Final color composition with relief lighting and deep socket AO
-      vec3 col = (uBaseColor * lighting + specularSheen) * socketAO;
-      col = mix(col, uLineColor * currentGlow, lineFactor * 0.95);
-      col += uRimColor * (fresnel * 0.65 * breath);
+      // Final composite with razor-thin laser emissive
+      vec3 laserEmissive = uLineColor * (laserFactor * laserGlow);
+      vec3 laserWaveFlash = vec3(1.0) * (scanWave * laserFactor * 1.2);
+
+      vec3 col = (carbonBase + specSheen) * socketAO;
+      col = mix(col, laserEmissive + laserWaveFlash, clamp(laserFactor, 0.0, 1.0));
+      col += uRimColor * (fresnel * 0.55 * breath);
       col = clamp(col, vec3(0.0), vec3(4.0));
 
       gl_FragColor = vec4(col, 1.0);
@@ -691,10 +745,12 @@ function createProceduralCyberShaderMaterial({
       uBaseColor: { value: new THREE.Color(baseColor) },
       uLineColor: { value: new THREE.Color(lineColor) },
       uRimColor: { value: new THREE.Color(rimColor) },
+      uViaColor: { value: new THREE.Color(viaColor) },
       uScale: { value: scale },
       uLineWidth: { value: lineWidth },
       uGlow: { value: glow },
       uTime: { value: 0.0 },
+      uMouseSpeed: { value: 0.0 },
       uBilateral: { value: bilateral ? 1.0 : 0.0 },
       uIsMask: { value: isMask ? 1.0 : 0.0 },
       uIsBody: { value: isBody ? 1.0 : 0.0 },
@@ -1056,6 +1112,8 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
   const smoothHeadRef  = useRef({ x: 0, y: 0 }); // Head Assembly inertia buffer
   // ── Soft Return-to-Center Target (lerps to 0 gradually on mouse leave) ─
   const mouseTargetRef = useRef({ x: 0, y: 0 });
+  const prevMouseRef = useRef({ x: 0, y: 0 });
+  const smoothMouseSpeedRef = useRef(0);
   const hitAreaRef = useRef();
   const targetScaleRef = useRef(CELESTIAL_CONFIG.baseScale);
   const currentScaleRef = useRef(CELESTIAL_CONFIG.baseScale);
@@ -1076,8 +1134,9 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
         baseColor: '#080214',
         lineColor: '#C084FC',
         rimColor: '#A855F7',
-        scale: 4.6,
-        lineWidth: 0.046,
+        viaColor: '#FFB703',
+        scale: 26.0,
+        lineWidth: 0.014,
         glow: 1.85,
         bilateral: true,
         isMask: true,
@@ -1118,8 +1177,9 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
         baseColor: '#001408',
         lineColor: '#00FF88',
         rimColor: '#00FF88',
-        scale: 3.6,
-        lineWidth: 0.042,
+        viaColor: '#FFB703',
+        scale: 22.0,
+        lineWidth: 0.012,
         glow: 1.75,
         bilateral: false,
       }),
@@ -1127,8 +1187,9 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
         baseColor: '#05020c',
         lineColor: '#A855F7',
         rimColor: '#A855F7',
-        scale: 5.5,
-        lineWidth: 0.046,
+        viaColor: '#FFB703',
+        scale: 28.0,
+        lineWidth: 0.015,
         glow: 1.80,
         bilateral: false,
       }),
@@ -1136,8 +1197,9 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
         baseColor: '#020612',
         lineColor: '#00E5FF',
         rimColor: '#00E5FF',
-        scale: 5.2,
-        lineWidth: 0.046,
+        viaColor: '#FFB703',
+        scale: 28.0,
+        lineWidth: 0.014,
         glow: 1.85,
         bilateral: false,
       }),
@@ -1145,8 +1207,9 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
         baseColor: '#020612',
         lineColor: '#00E5FF',
         rimColor: '#00E5FF',
-        scale: 4.8,
-        lineWidth: 0.044,
+        viaColor: '#FFB703',
+        scale: 24.0,
+        lineWidth: 0.014,
         glow: 1.85,
         bilateral: true,
         isBody: true,
@@ -1273,17 +1336,22 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
 
-    // Update breathing glow on all full-body shader materials
-    shaderMatsRef.current.forEach((mat) => {
-      if (mat.uniforms && mat.uniforms.uTime) {
-        mat.uniforms.uTime.value = t;
-      }
-    });
-
-    // ── Mouse Target: lerps gradually to 0 when mouse leaves (no hard snap) ─
+    // ── Mouse Target & Speed Tracking ──────────────────────────────
     const storeState = useCockpitStore.getState();
     const rawMouse = storeState.mouseNorm || { x: 0, y: 0 };
     const isInsideCanvas = storeState.isMouseActive;
+
+    const rawSpeed = Math.min(3.0, Math.hypot(rawMouse.x - prevMouseRef.current.x, rawMouse.y - prevMouseRef.current.y) * 35.0);
+    prevMouseRef.current = { x: rawMouse.x, y: rawMouse.y };
+    smoothMouseSpeedRef.current = THREE.MathUtils.lerp(smoothMouseSpeedRef.current, rawSpeed, 0.15);
+
+    // Update breathing glow & mouse speed on all full-body shader materials
+    shaderMatsRef.current.forEach((mat) => {
+      if (mat.uniforms) {
+        if (mat.uniforms.uTime) mat.uniforms.uTime.value = t;
+        if (mat.uniforms.uMouseSpeed) mat.uniforms.uMouseSpeed.value = smoothMouseSpeedRef.current;
+      }
+    });
 
     if (isInsideCanvas) {
       // Mouse is inside: track actual position with a gentle lead-in

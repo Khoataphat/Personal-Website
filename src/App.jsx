@@ -3,6 +3,7 @@ import { useCockpitStore } from './store/cockpitStore';
 import { HeroCosmicScene } from './components/hero/HeroCosmicScene';
 import { HeroTopNav } from './components/hero/HeroTopNav';
 import { HeroBackgroundTypography, HeroForegroundHUD } from './components/hero/HeroTypography';
+import { EditorialDossier } from './components/editorial/EditorialDossier';
 import { ExpandedDetailModal } from './components/hero/ExpandedDetailModal';
 import { ProjectDeepDiveModal } from './components/cockpit/ProjectDeepDiveModal';
 import BlogModal from './components/common/BlogModal';
@@ -29,6 +30,9 @@ export default function App() {
       {/* ── 3. Foreground HUD Overlays (Layer 3: z-20/z-30) ─────────── */}
       <HeroTopNav />
       <HeroForegroundHUD />
+
+      {/* ── 4. Minimalist Dark Editorial Dossier (Layer 4: z-50 Fullscreen) ─ */}
+      <EditorialDossier />
 
       {/* Expanded Section Card Detail Modal */}
       <ExpandedDetailModal />

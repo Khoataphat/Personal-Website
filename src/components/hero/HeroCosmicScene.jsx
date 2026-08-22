@@ -194,10 +194,21 @@ function HeroCameraRig() {
       s.radius = Math.max(0.40, Math.min(5.5, s.radius));
     }
 
-    const mouse = useCockpitStore.getState().mouseNorm || { x: 0, y: 0 };
+    const isDossierOpen = useCockpitStore.getState().isDossierOpen;
+
+    // Smoothly adapt target spherical values based on Dossier state
+    const targetRadius = isDossierOpen ? 2.40 : DEFAULT_SPHERICAL.radius;
+    const targetPhi = isDossierOpen ? Math.PI * 0.51 : DEFAULT_SPHERICAL.phi;
+    const targetTheta = isDossierOpen ? -0.10 : DEFAULT_SPHERICAL.theta;
+
+    if (!ENABLE_KEYBOARD_CONTROLS && !isDraggingRef.current) {
+      s.radius += (targetRadius - s.radius) * Math.min(1, delta * 3.5);
+      s.phi += (targetPhi - s.phi) * Math.min(1, delta * 3.5);
+      s.theta += (targetTheta - s.theta) * Math.min(1, delta * 3.5);
+    }
 
     const targetX = 0;
-    const targetY = 0.05;
+    const targetY = isDossierOpen ? 0.15 : 0.05;
     const targetZ = 0;
 
     // Spherical to Cartesian calculation
@@ -212,7 +223,7 @@ function HeroCameraRig() {
     const destZ = targetZ + s.radius * sinPhi * cosTheta;
 
     // Smooth camera transition
-    const lerpFactor = Math.min(1, delta * 10);
+    const lerpFactor = Math.min(1, delta * 8);
     camera.position.x += (destX - camera.position.x) * lerpFactor;
     camera.position.y += (destY - camera.position.y) * lerpFactor;
     camera.position.z += (destZ - camera.position.z) * lerpFactor;
