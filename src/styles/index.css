@@ -118,9 +118,94 @@
     background-size: 24px 24px;
     background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 0);
   }
+
+  /* Hero Cyber-Holographic Wireframe Typography */
+  .hero-holo-cyan {
+    color: rgba(0, 242, 254, 0.03);
+    -webkit-text-stroke: 1.3px rgba(0, 242, 254, 0.42);
+    text-shadow: 0 0 25px rgba(0, 242, 254, 0.35), 0 0 60px rgba(0, 242, 254, 0.12);
+    transition: color 0.35s ease, -webkit-text-stroke 0.35s ease, text-shadow 0.35s ease;
+  }
+
+  .hero-holo-cyan.active-hover {
+    color: rgba(0, 242, 254, 0.12);
+    -webkit-text-stroke: 1.8px rgba(0, 242, 254, 0.88);
+    text-shadow: 0 0 35px rgba(0, 242, 254, 0.75), 0 0 80px rgba(0, 242, 254, 0.35);
+  }
+
+  .hero-holo-violet {
+    color: rgba(121, 40, 202, 0.04);
+    -webkit-text-stroke: 1.3px rgba(121, 40, 202, 0.48);
+    text-shadow: 0 0 30px rgba(121, 40, 202, 0.4), 0 0 70px rgba(121, 40, 202, 0.15);
+    transition: color 0.35s ease, -webkit-text-stroke 0.35s ease, text-shadow 0.35s ease;
+  }
+
+  .hero-holo-violet.active-hover {
+    color: rgba(121, 40, 202, 0.15);
+    -webkit-text-stroke: 1.8px rgba(121, 40, 202, 0.95);
+    text-shadow: 0 0 45px rgba(121, 40, 202, 0.85), 0 0 90px rgba(121, 40, 202, 0.45);
+  }
+
+  /* Dual-Direction Kinetic Chrome Marquee Typography */
+  .chrome-text-cyan {
+    background: linear-gradient(135deg, #ffffff 10%, #e0f7fa 35%, #80deea 65%, #00e5ff 90%, #00b0ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 16px rgba(0, 229, 255, 0.45)) drop-shadow(0 0 45px rgba(0, 229, 255, 0.20));
+    letter-spacing: 0.06em;
+    font-weight: 900;
+  }
+
+  .chrome-text-violet {
+    background: linear-gradient(135deg, #ffffff 10%, #f3e8ff 35%, #c084fc 65%, #a855f7 90%, #7928ca 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 16px rgba(168, 85, 247, 0.45)) drop-shadow(0 0 45px rgba(121, 40, 202, 0.20));
+    letter-spacing: 0.06em;
+    font-weight: 900;
+  }
+
+  .marquee-edge-fade {
+    mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.85) 8%, black 15%, black 85%, rgba(0, 0, 0, 0.85) 92%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.85) 8%, black 15%, black 85%, rgba(0, 0, 0, 0.85) 92%, transparent 100%);
+  }
+
+  .kinetic-track-left {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+    animation: marqueeScrollLeft 85s linear infinite;
+  }
+
+  .kinetic-track-right {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+    animation: marqueeScrollRight 90s linear infinite;
+  }
 }
 
 /* ── Hero Page Animations ──────────────────────────────────────────────── */
+@keyframes marqueeScrollLeft {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes marqueeScrollRight {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }

@@ -2,7 +2,7 @@ import React from 'react';
 import { useCockpitStore } from './store/cockpitStore';
 import { HeroCosmicScene } from './components/hero/HeroCosmicScene';
 import { HeroTopNav } from './components/hero/HeroTopNav';
-import { HeroTypography } from './components/hero/HeroTypography';
+import { HeroBackgroundTypography, HeroForegroundHUD } from './components/hero/HeroTypography';
 import { ExpandedDetailModal } from './components/hero/ExpandedDetailModal';
 import { ProjectDeepDiveModal } from './components/cockpit/ProjectDeepDiveModal';
 import BlogModal from './components/common/BlogModal';
@@ -20,15 +20,15 @@ export default function App() {
       {/* Custom Cyber Cursor */}
       <CustomCursor />
 
-      {/* ── 3D Hero Cosmic Scene (background canvas) ────────── */}
+      {/* ── 1. Background Typography (Layer 1: z-0 behind 3D Canvas) ── */}
+      <HeroBackgroundTypography />
+
+      {/* ── 2. 3D Hero Cosmic Scene (Layer 2: z-10 Canvas) ──────────── */}
       <HeroCosmicScene />
 
-      {/* ── 2D DOM Overlays ──────────────────────────────────── */}
-      {/* Top Navigation Bar */}
+      {/* ── 3. Foreground HUD Overlays (Layer 3: z-20/z-30) ─────────── */}
       <HeroTopNav />
-
-      {/* Hero Title Typography */}
-      <HeroTypography />
+      <HeroForegroundHUD />
 
       {/* Expanded Section Card Detail Modal */}
       <ExpandedDetailModal />

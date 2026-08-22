@@ -2,8 +2,7 @@ import React, { useRef, useEffect, useState, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { getGPUTier } from 'detect-gpu';
-import { useCockpitStore } from '../../store/cockpitStore';
-import { BackgroundMatrix3D } from '../cockpit/BackgroundMatrix3D';
+import { CosmicGalaxyBackdrop } from './CosmicGalaxyBackdrop';
 import { HeroBustAvatar } from './HeroBustAvatar';
 
 /**
@@ -37,19 +36,27 @@ function TelemetryTracker() {
 }
 
 /**
- * Keyboard Orbit Controls Toggle
- * Set to `true` whenever you want to re-enable interactive WASD & QE inspection controls.
+ * Keyboard & Pointer Orbit Controls Toggle
+ * Set to `true` to enable full interactive 360° inspection controls (WASD, QE, Drag, Wheel).
  */
 const ENABLE_KEYBOARD_CONTROLS = false;
+
+const DEFAULT_SPHERICAL = {
+  radius: 1.90,
+  phi: Math.PI * 0.54,
+  theta: -0.22,
+};
 
 /**
  * Hero Camera Rig
  *
- * Cinematic Sovereign Low-Angle 3/4 Lock with Subtle Mouse Parallax.
- * Preserves full WASD & QE inspection orbit controls via `ENABLE_KEYBOARD_CONTROLS` toggle flag:
+ * Full Interactive Inspection & Cinematic Sovereign Framing:
  *   - A / D (or ArrowLeft / ArrowRight): Horizontal 360° Orbit (Azimuth angle)
  *   - W / S (or ArrowUp / ArrowDown): Vertical Height / Pitch Angle (Polar angle)
  *   - Q / E (or PageUp / PageDown): Zoom In / Zoom Out (Distance radius)
+ *   - R: Reset camera position to default Sovereign Framing
+ *   - Pointer Drag (Left Click Drag): Free 360° Orbit Navigation
+ *   - Wheel Scroll: Smooth Optical Zoom In / Out
  */
 function HeroCameraRig() {
   const keysRef = useRef({
@@ -61,20 +68,17 @@ function HeroCameraRig() {
     e: false,
   });
 
-  // Sovereign Low-Angle 3/4 Cinematic Lock
-  // phi = Math.PI * 0.54 (subtly tilted upwards towards mask for an imposing royal presence)
-  // theta = -0.22 (~12.6° subtle 3/4 angle showcasing chest, mask facets, and singularity core)
-  // radius = 1.90 (close-up cinematic framing)
-  const sphericalRef = useRef({
-    radius: 1.90,
-    phi: Math.PI * 0.54,
-    theta: -0.22,
-  });
+  const sphericalRef = useRef({ ...DEFAULT_SPHERICAL });
+  const isDraggingRef = useRef(false);
+  const prevPointerRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     if (!ENABLE_KEYBOARD_CONTROLS) return;
 
     const handleKeyDown = (e) => {
+      // Ignore keyboard navigation if typing in an input or textarea
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+
       const key = e.key.toLowerCase();
       if (key === 'w' || key === 'arrowup') keysRef.current.w = true;
       if (key === 's' || key === 'arrowdown') keysRef.current.s = true;
@@ -82,6 +86,13 @@ function HeroCameraRig() {
       if (key === 'd' || key === 'arrowright') keysRef.current.d = true;
       if (key === 'q' || key === 'pageup') keysRef.current.q = true;
       if (key === 'e' || key === 'pagedown') keysRef.current.e = true;
+
+      // Reset camera to default pose
+      if (key === 'r') {
+        sphericalRef.current.radius = DEFAULT_SPHERICAL.radius;
+        sphericalRef.current.phi = DEFAULT_SPHERICAL.phi;
+        sphericalRef.current.theta = DEFAULT_SPHERICAL.theta;
+      }
     };
 
     const handleKeyUp = (e) => {
@@ -94,11 +105,67 @@ function HeroCameraRig() {
       if (key === 'e' || key === 'pagedown') keysRef.current.e = false;
     };
 
+    const handlePointerDown = (e) => {
+      // Only drag with primary left mouse button or single touch
+      if (e.button !== 0 && e.button !== undefined) return;
+      // Do not initiate camera drag if user clicks a button, link, or modal
+      if (e.target.closest('button, a, input, [role="button"], .modal-content')) return;
+
+      const state = useCockpitStore.getState();
+      if (state.isCardExpanded || state.activeProjectModal || state.activeBlogModal || state.activePdfUrl) return;
+
+      isDraggingRef.current = true;
+      prevPointerRef.current = { x: e.clientX, y: e.clientY };
+    };
+
+    const handlePointerMove = (e) => {
+      if (!isDraggingRef.current) return;
+      const deltaX = e.clientX - prevPointerRef.current.x;
+      const deltaY = e.clientY - prevPointerRef.current.y;
+      prevPointerRef.current = { x: e.clientX, y: e.clientY };
+
+      const s = sphericalRef.current;
+      s.theta -= deltaX * 0.0055;
+      s.phi -= deltaY * 0.0050;
+      s.phi = Math.max(0.08, Math.min(Math.PI - 0.08, s.phi));
+    };
+
+    const handlePointerUp = () => {
+      isDraggingRef.current = false;
+    };
+
+    const handleWheel = (e) => {
+      const state = useCockpitStore.getState();
+      if (state.isCardExpanded || state.activeProjectModal || state.activeBlogModal || state.activePdfUrl) return;
+
+      const s = sphericalRef.current;
+      s.radius += e.deltaY * 0.0018;
+      s.radius = Math.max(0.40, Math.min(5.5, s.radius));
+    };
+
+    window.resetHeroCamera = () => {
+      sphericalRef.current.radius = DEFAULT_SPHERICAL.radius;
+      sphericalRef.current.phi = DEFAULT_SPHERICAL.phi;
+      sphericalRef.current.theta = DEFAULT_SPHERICAL.theta;
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+    window.addEventListener('wheel', handleWheel, { passive: true });
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+      window.removeEventListener('wheel', handleWheel);
+      delete window.resetHeroCamera;
     };
   }, []);
 
@@ -119,12 +186,12 @@ function HeroCameraRig() {
       // Vertical Orbit: W pitches up, S pitches down
       if (keys.w) s.phi -= pitchSpeed * delta;
       if (keys.s) s.phi += pitchSpeed * delta;
-      s.phi = Math.max(0.05, Math.min(Math.PI - 0.05, s.phi));
+      s.phi = Math.max(0.08, Math.min(Math.PI - 0.08, s.phi));
 
       // Zoom: Q zooms in, E zooms out
       if (keys.q) s.radius -= zoomSpeed * delta;
       if (keys.e) s.radius += zoomSpeed * delta;
-      s.radius = Math.max(0.35, Math.min(12.0, s.radius));
+      s.radius = Math.max(0.40, Math.min(5.5, s.radius));
     }
 
     const mouse = useCockpitStore.getState().mouseNorm || { x: 0, y: 0 };
@@ -133,14 +200,15 @@ function HeroCameraRig() {
     const targetY = 0.05;
     const targetZ = 0;
 
-    // Spherical to Cartesian calculation with subtle 3D mouse parallax
+    // Spherical to Cartesian calculation
     const sinPhi = Math.sin(s.phi);
     const cosPhi = Math.cos(s.phi);
     const sinTheta = Math.sin(s.theta);
     const cosTheta = Math.cos(s.theta);
 
-    const destX = targetX + s.radius * sinPhi * sinTheta + mouse.x * 0.045;
-    const destY = targetY + s.radius * cosPhi + mouse.y * 0.035;
+    // Fixed Sovereign Framing (zero camera mouse drift)
+    const destX = targetX + s.radius * sinPhi * sinTheta;
+    const destY = targetY + s.radius * cosPhi;
     const destZ = targetZ + s.radius * sinPhi * cosTheta;
 
     // Smooth camera transition
@@ -167,6 +235,7 @@ function HeroCameraRig() {
 export function HeroCosmicScene() {
   const [gpuTier, setGpuTier] = useState(2);
   const setMouseNorm = useCockpitStore((s) => s.setMouseNorm);
+  const setMouseInactive = useCockpitStore((s) => s.setMouseInactive);
 
   useEffect(() => {
     let alive = true;
@@ -183,12 +252,12 @@ export function HeroCosmicScene() {
   };
 
   const isHighTier = gpuTier >= 2;
-  const particleCount = gpuTier <= 1 ? 180 : 350;
 
   return (
     <div
-      className="fixed inset-0 w-screen h-screen overflow-hidden bg-[#070709] z-0"
+      className="fixed inset-0 w-screen h-screen overflow-hidden bg-transparent z-10"
       onPointerMove={handlePointerMove}
+      onPointerLeave={setMouseInactive}
     >
       <Canvas
         camera={{ fov: 45, position: [0, 0.02, 1.95], near: 0.1, far: 80 }}
@@ -202,14 +271,21 @@ export function HeroCosmicScene() {
         <HeroCameraRig />
         <TelemetryTracker />
 
-        {/* Lights */}
-        <ambientLight intensity={0.25} />
-        <pointLight color="#00f2fe" position={[0, 3, 2.5]} intensity={3.2} />
-        <pointLight color="#7928ca" position={[-2.5, 1.5, -1.5]} intensity={2.2} />
-        <pointLight color="#ff8c00" position={[1.5, -0.2, 1.5]} intensity={1.5} />
+        {/* Cinematic Cold Cosmic Lighting — Deep Void + Solar Gold Rim */}
+        <ambientLight intensity={0.18} />
+        {/* Front Key Light (Ice Cyan — subtle, cool) */}
+        <pointLight color="#00d4f5" position={[0, 2.4, 2.0]} intensity={2.2} />
+        {/* Left Cold Fill Light (Midnight Indigo) */}
+        <pointLight color="#4a2daa" position={[-2.8, 1.0, -1.0]} intensity={1.8} />
+        {/* Back-Right Solar Gold Rim Light — strong, keeps Avatar edge lit */}
+        <pointLight color="#ffaa00" position={[2.2, 0.5, -2.0]} intensity={4.8} />
+        {/* Back-Left Cool Rim (Steel Blue — counterbalance) */}
+        <pointLight color="#2060dd" position={[-1.8, 0.8, -2.5]} intensity={1.6} />
+        {/* Bottom Subtle Cyan Fill */}
+        <pointLight color="#0088aa" position={[0, -2.0, 1.0]} intensity={0.8} />
 
-        {/* Deep Space Background Matrix */}
-        <BackgroundMatrix3D particleCount={particleCount} />
+        {/* Deep Void Cosmic Backdrop — Stars, Nebula, God Rays */}
+        <CosmicGalaxyBackdrop gpuTier={gpuTier} />
 
         {/* Dual-layer Bust Avatar (Framed at AVATAR_Y = -2.85) */}
         <Suspense fallback={null}>
@@ -220,10 +296,10 @@ export function HeroCosmicScene() {
         {isHighTier && (
           <EffectComposer multisampling={0}>
             <Bloom
-              intensity={1.5}
-              luminanceThreshold={0.72}
-              luminanceSmoothing={0.03}
-              radius={0.8}
+              intensity={1.35}
+              luminanceThreshold={0.70}
+              luminanceSmoothing={0.04}
+              radius={0.75}
               mipmapBlur
             />
           </EffectComposer>

@@ -466,27 +466,52 @@ function CurvedCyberCard({ item, radius, arcAngle = 0.74, height = 0.046 }) {
 }
 
 /**
- * Procedural Cyber-Voronoi Shader Material Generator
- * Computes 3D Voronoi facet edges + Fresnel rim glow + dynamic breathing glow directly on the GPU.
+ * Procedural Cyber Voronoi Shader with 3D Surface Relief Lighting, Eye Framing & Soft Skinning Neck
  */
 function createProceduralCyberShaderMaterial({
-  baseColor = '#020612',
-  lineColor = '#00E5FF',
-  rimColor = '#00E5FF',
-  scale = 2.8,
-  lineWidth = 0.048,
-  glow = 1.8,
-  bilateral = false,
+  baseColor = '#05020a',
+  lineColor = '#C084FC',
+  rimColor = '#9333EA',
+  scale = 16.0,
+  lineWidth = 0.035,
+  glow = 1.85,
+  bilateral = true,
+  isMask = false,
+  isBody = false,
+  eyeCenters = [],
+  eyeT = [],
+  eyeB = [],
+  eyeRadii = [],
 }) {
   const vertexShader = `
+    uniform float uIsBody;
+    uniform mat4 uHeadMatrix;
+
     varying vec3 vLocalPosition;
     varying vec3 vNormal;
     varying vec3 vViewPosition;
 
     void main() {
-      vLocalPosition = position;
-      vNormal = normalize(normalMatrix * normal);
-      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+      vec3 pos = position;
+      vec3 norm = normal;
+
+      if (uIsBody > 0.5) {
+        // Procedural Linear Blend Skinning:
+        // pos.z in Body_Body_0: -0.10 (chest, weight = 0.0) -> 0.22 (head base, weight = 1.0)
+        float weight = smoothstep(-0.10, 0.22, pos.z);
+
+        // Exact 4x4 Joint Matrix Transformation:
+        // For pos.z >= 0.22 (the full 3D skull and head), weight = 1.0, rotating identically 1:1 with the mask
+        vec4 transformedPos = uHeadMatrix * vec4(pos, 1.0);
+        vec3 transformedNorm = mat3(uHeadMatrix) * norm;
+
+        pos = mix(pos, transformedPos.xyz, weight);
+        norm = normalize(mix(norm, transformedNorm, weight));
+      }
+
+      vLocalPosition = pos;
+      vNormal = normalize(normalMatrix * norm);
+      vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
       vViewPosition = -mvPosition.xyz;
       gl_Position = projectionMatrix * mvPosition;
     }
@@ -501,43 +526,38 @@ function createProceduralCyberShaderMaterial({
     uniform float uGlow;
     uniform float uTime;
     uniform float uBilateral;
+    uniform float uIsMask;
+    uniform vec3 uEyeCenters[6];
+    uniform vec3 uEyeT[6];
+    uniform vec3 uEyeB[6];
+    uniform vec2 uEyeRadii[6];
 
     varying vec3 vLocalPosition;
     varying vec3 vNormal;
     varying vec3 vViewPosition;
 
-    // Fast, ultra-stable non-trigonometric 3D hash (0% risk of float overflow or NaN)
     vec3 hash33(vec3 p) {
       p = fract(p * vec3(0.1031, 0.1030, 0.0973));
       p += dot(p, p.yxz + 33.33);
       return fract((p.xxy + p.yxx) * p.zyx);
     }
 
-    // 3D Voronoi with NaN guard and boundary safety
     vec2 voronoi3D(vec3 x) {
       vec3 p = floor(x);
       vec3 f = fract(x);
-
       float d1 = 8.0;
       float d2 = 8.0;
-
       for (int k = -1; k <= 1; k++) {
         for (int j = -1; j <= 1; j++) {
           for (int i = -1; i <= 1; i++) {
             vec3 b = vec3(float(i), float(j), float(k));
             vec3 r = vec3(b) - f + hash33(p + b);
             float d = dot(r, r);
-
-            if (d < d1) {
-              d2 = d1;
-              d1 = d;
-            } else if (d < d2) {
-              d2 = d;
-            }
+            if (d < d1) { d2 = d1; d1 = d; }
+            else if (d < d2) { d2 = d; }
           }
         }
       }
-
       return vec2(sqrt(max(d1, 0.0)), sqrt(max(d2, 0.0)));
     }
 
@@ -552,26 +572,119 @@ function createProceduralCyberShaderMaterial({
       float edgeDist = v.y - v.x;
       float lineFactor = 1.0 - smoothstep(0.0, uLineWidth, edgeDist);
 
-      // Breathing glow: clamp floor at 0.90 so base color NEVER dips to near-black
+      // Breathing glow
       float breath = 0.90 + 0.10 * sin(uTime * 0.75);
       float currentGlow = uGlow * breath;
 
-      // Fresnel edge rim glow
-      vec3 viewDir = normalize(vViewPosition);
-      vec3 norm = normalize(vNormal);
-      float fresnel = pow(1.0 - max(dot(viewDir, norm), 0.0), 2.5);
+      // ── Voronoi Eye Framing & Organic Eyelid 3D Relief ─────────────
+      vec3 eyelidNormalBump = vec3(0.0);
+      float socketAO = 1.0;
 
-      // Final color composition — base always stays visible, never pure black
-      vec3 col = uBaseColor;
+      if (uIsMask > 0.5) {
+        float eyelidGlow = 0.0;
+        float insideSocketMask = 0.0;
+
+        for (int i = 0; i < 6; i++) {
+          vec3 d = vLocalPosition - uEyeCenters[i];
+          float u = dot(d, uEyeT[i]);
+          float w = dot(d, uEyeB[i]);
+          float a = uEyeRadii[i].x;
+          float b = uEyeRadii[i].y;
+
+          // Superellipse metric (p=2.2)
+          float normU = abs(u) / max(a, 0.001);
+          float normW = abs(w) / max(b, 0.001);
+          float M = pow(pow(normU, 2.2) + pow(normW, 2.2), 1.0 / 2.2);
+
+          // Direction pointing outward from eye center in local tangent plane
+          vec3 gradDir = normalize(uEyeT[i] * (u / max(a * a, 0.0001)) + uEyeB[i] * (w / max(b * b, 0.0001)));
+
+          // 1. Deep Socket Ambient Occlusion (darkens deep inside socket hole)
+          float currentAO = smoothstep(0.82, 1.12, M);
+          socketAO = min(socketAO, currentAO);
+
+          // 2. Cut out random Voronoi cracks crossing inside the socket
+          float cutHole = 1.0 - smoothstep(0.85, 1.15, M);
+          insideSocketMask = max(insideSocketMask, cutHole);
+
+          // 3. Eyelid 3D Relief Normal Perturbation (Slope dH/dM)
+          float slope = 0.0;
+          if (M >= 0.88 && M < 1.22) {
+            // Rising slope: inner eyelid wall climbing to peak ridge
+            slope = sin((M - 0.88) / 0.34 * 3.14159) * 0.85;
+          } else if (M >= 1.22 && M < 1.62) {
+            // Falling slope: outer eyelid flank sloping down to mask base
+            slope = -sin((M - 1.22) / 0.40 * 3.14159) * 0.65;
+          } else if (M >= 1.62 && M < 1.98) {
+            // Secondary crease ripple (upper eyelid fold / lower pouch)
+            slope = sin((M - 1.62) / 0.36 * 6.28318) * 0.30;
+          }
+          eyelidNormalBump += gradDir * slope;
+
+          // 4. Multi-Tier Organic Crease Glow Lines
+          // Inner rim glow at socket lip (M = 0.96)
+          float innerLip = (1.0 - smoothstep(0.0, uLineWidth * 1.3, abs(M - 0.96))) * 0.55;
+          // Primary eyelid peak ridge glow (M = 1.22)
+          float peakRidge = (1.0 - smoothstep(0.0, uLineWidth * 1.6, abs(M - 1.22))) * 1.45;
+          // Secondary double eyelid crease glow (M = 1.62)
+          float outerFold = (1.0 - smoothstep(0.0, uLineWidth * 1.4, abs(M - 1.62))) * 0.85;
+
+          // Subtle organic micro-spokes between inner lip and peak ridge
+          float angle = atan(w, u);
+          float spoke = pow(max(0.0, sin(angle * 8.0)), 6.0) * step(0.96, M) * step(M, 1.22) * 0.40;
+
+          float eyeContour = max(max(peakRidge, outerFold), innerLip) + spoke;
+          eyelidGlow = max(eyelidGlow, eyeContour);
+        }
+
+        // Apply Voronoi crack repulsion and blend in multi-tier eyelid contours
+        lineFactor = mix(lineFactor, 0.0, insideSocketMask);
+        lineFactor = max(lineFactor, eyelidGlow);
+      }
+
+      // ── 3D Surface Relief Lighting (Reveals Sculpted Eyelids & Sockets) ──
+      vec3 norm = normalize(vNormal);
+      vec3 perturbedNorm = normalize(norm + eyelidNormalBump * 0.90);
+      vec3 viewDir = normalize(vViewPosition);
+
+      vec3 light1 = normalize(vec3(0.4, 0.7, 0.9));
+      vec3 light2 = normalize(vec3(-0.5, 0.3, 0.7));
+      float diff1 = max(dot(perturbedNorm, light1), 0.0);
+      float diff2 = max(dot(perturbedNorm, light2), 0.0);
+      float lighting = 0.25 + diff1 * 0.55 + diff2 * 0.30;
+
+      // Obsidian specular sheen (reacts dynamically to sculpted eyelid curves)
+      vec3 half1 = normalize(light1 + viewDir);
+      float spec = pow(max(dot(perturbedNorm, half1), 0.0), 22.0) * 0.65;
+      vec3 half2 = normalize(light2 + viewDir);
+      float spec2 = pow(max(dot(perturbedNorm, half2), 0.0), 16.0) * 0.35;
+
+      // Fresnel edge rim glow
+      float fresnel = pow(1.0 - max(dot(viewDir, perturbedNorm), 0.0), 2.5);
+
+      // Dynamic specular sheen matching each component's distinct accent color
+      vec3 specColor = mix(vec3(1.0), uRimColor, 0.45);
+      vec3 specularSheen = specColor * (spec * 0.70 + spec2 * 0.35);
+
+      // Final color composition with relief lighting and deep socket AO
+      vec3 col = (uBaseColor * lighting + specularSheen) * socketAO;
       col = mix(col, uLineColor * currentGlow, lineFactor * 0.95);
       col += uRimColor * (fresnel * 0.65 * breath);
-
-      // Hard clamp: guard against any residual NaN or overshoot
       col = clamp(col, vec3(0.0), vec3(4.0));
 
       gl_FragColor = vec4(col, 1.0);
     }
   `;
+
+  // Default empty arrays for non-mask materials
+  const defaultZeros = () => [
+    new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(),
+    new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()
+  ];
+  const defaultVec2s = () => [
+    new THREE.Vector2(), new THREE.Vector2(), new THREE.Vector2(),
+    new THREE.Vector2(), new THREE.Vector2(), new THREE.Vector2()
+  ];
 
   return new THREE.ShaderMaterial({
     uniforms: {
@@ -583,6 +696,13 @@ function createProceduralCyberShaderMaterial({
       uGlow: { value: glow },
       uTime: { value: 0.0 },
       uBilateral: { value: bilateral ? 1.0 : 0.0 },
+      uIsMask: { value: isMask ? 1.0 : 0.0 },
+      uIsBody: { value: isBody ? 1.0 : 0.0 },
+      uHeadMatrix: { value: new THREE.Matrix4() },
+      uEyeCenters: { value: eyeCenters.length === 6 ? eyeCenters : defaultZeros() },
+      uEyeT: { value: eyeT.length === 6 ? eyeT : defaultZeros() },
+      uEyeB: { value: eyeB.length === 6 ? eyeB : defaultZeros() },
+      uEyeRadii: { value: eyeRadii.length === 6 ? eyeRadii : defaultVec2s() },
     },
     vertexShader,
     fragmentShader,
@@ -594,18 +714,17 @@ function createProceduralCyberShaderMaterial({
 }
 
 /**
- * Optical Multi-Layer Emissive Shader for the 6 Native Eye Meshes
+ * Energy Discharge Eye Shader — 6 Native Eye Meshes
+ * Key: dot(viewDir, norm) = NDotV is 1 at the pole facing camera, 0 at rim.
+ * disc coords = norm.xy (view-space) — maps to 2D disc on each sphere
+ * regardless of the sphere's orientation in world space.
  */
 function createOpticalEyeMaterial() {
   const vertexShader = `
-    varying vec2 vUv;
-    varying vec3 vLocalPos;
     varying vec3 vNormal;
     varying vec3 vViewPosition;
 
     void main() {
-      vUv = uv;
-      vLocalPos = position;
       vNormal = normalize(normalMatrix * normal);
       vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
       vViewPosition = -mvPosition.xyz;
@@ -614,64 +733,172 @@ function createOpticalEyeMaterial() {
   `;
 
   const fragmentShader = `
-    uniform vec3 uOuterGold;
-    uniform vec3 uRimGold;
-    uniform vec3 uCavityColor;
-    uniform vec3 uPupilColor;
-    uniform float uGlow;
+    precision highp float;
+
+    uniform vec3  uVoidColor;      // Deep black void sclera
+    uniform vec3  uBoltCyan;       // Primary lightning: electric cyan
+    uniform vec3  uBoltViolet;     // Secondary lightning: quantum violet
+    uniform vec3  uCoreWhite;      // Pupil singularity white-hot core
+    uniform vec3  uCoronaAmber;    // Outer corona amber/gold rim
+    uniform vec2  uPupilOffset;    // Gaze tracking
     uniform float uTime;
 
-    varying vec2 vUv;
-    varying vec3 vLocalPos;
     varying vec3 vNormal;
     varying vec3 vViewPosition;
 
+    // ─── Hash/noise helpers ────────────────────────────────────────────
+    float hash11(float n) { return fract(sin(n) * 43758.5453123); }
+
+    float valueNoise(float x) {
+      float i = floor(x);
+      float f = fract(x);
+      float u = f * f * (3.0 - 2.0 * f);
+      return mix(hash11(i), hash11(i + 1.0), u);
+    }
+
+    // ─── Single jagged lightning bolt ─────────────────────────────────
+    // uv.x = radial direction (forward), uv.y = lateral displacement
+    float lightningBolt(vec2 uv, float seed, float rMax, float jitter, float spd) {
+      const int SEGS = 8;
+      float intensity = 0.0;
+
+      for (int i = 1; i <= SEGS; i++) {
+        float t     = float(i)     / float(SEGS);
+        float tPrev = float(i - 1) / float(SEGS);
+
+        float noiseC = valueNoise(seed + t     * 11.0 + uTime * spd);
+        float noiseP = valueNoise(seed + tPrev * 11.0 + uTime * spd);
+
+        vec2 cur   = vec2(t    * rMax, (noiseC - 0.5) * jitter);
+        vec2 prev2 = vec2(tPrev * rMax, (noiseP - 0.5) * jitter);
+
+        vec2 seg = cur - prev2;
+        vec2 toP = uv  - prev2;
+        float tt = clamp(dot(toP, seg) / (dot(seg, seg) + 1e-5), 0.0, 1.0);
+        float d  = length(toP - seg * tt);
+
+        // Thin glowing core + wider soft halo
+        float core = smoothstep(0.022, 0.0,   d);
+        float halo = smoothstep(0.075, 0.006, d) * 0.5;
+        intensity  = max(intensity, core + halo);
+      }
+      return intensity;
+    }
+
     void main() {
-      // Center-distance in UV space
-      vec2 center = vec2(0.5, 0.5);
-      float dist = distance(vUv, center) * 2.0;
+      vec3 norm    = normalize(vNormal);
+      vec3 viewDir = normalize(vViewPosition);
 
-      // Outer gold bevel & highlight rim
-      float outerRim = smoothstep(0.68, 0.86, dist);
-      float outerSparkle = smoothstep(0.88, 1.0, dist);
+      // NDotV: 1.0 at the pole of sphere closest to camera, 0.0 at the rim
+      float NDotV = max(dot(norm, viewDir), 0.0);
 
-      // Inner iris blade ring
-      float irisRing = smoothstep(0.30, 0.44, dist) * (1.0 - smoothstep(0.60, 0.70, dist));
-      float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
-      float blades = sin(angle * 12.0) * 0.5 + 0.5;
-      float bladeIntensity = irisRing * (0.6 + 0.4 * blades);
+      // disc: view-space norm.xy gives 2D eyeball surface coordinates
+      vec2 disc = norm.xy;
+      float rDisc = length(disc);
+      float angDisc = atan(disc.y, disc.x);
 
-      // Luminous white-hot center pupil core with subtle breathing pulse
-      float pupilCore = 1.0 - smoothstep(0.0, 0.28, dist);
-      float breath = 0.90 + 0.20 * sin(uTime * 0.85);
+      // Shifted pupil center (travels across the eyeball up to ~0.58)
+      vec2 pupilCenter = uPupilOffset;
+      vec2 toPupil = disc - pupilCenter;
+      float rPupil = length(toPupil);
 
-      // Composite final optical eye color
-      vec3 col = uCavityColor;
-      col = mix(col, uOuterGold, outerRim);
-      col = mix(col, uRimGold * 1.6, outerSparkle);
-      col = mix(col, uOuterGold * 1.4, bladeIntensity);
-      col = mix(col, uPupilColor * (uGlow * breath), pupilCore);
+      float fresnel = pow(1.0 - NDotV, 2.2);
 
+      // ── 1. Void sclera ─────────────────────────────────────────────────
+      vec3 col = uVoidColor;
+
+      // ── 2. Zones ──────────────────────────────────────────────────────
+      // Iris disc is bounded to eyeball surface:
+      float irisOuter = 0.95;
+      float inIris = smoothstep(irisOuter, 0.15, rDisc);
+
+      // Pupil is centered at the dynamic pupilCenter:
+      float pupilR = 0.16;
+      float inPupil = smoothstep(pupilR, 0.0, rPupil);
+
+      // ── 3. Pupil Singularity Core (moves dynamically with pupilCenter) ─
+      float pulse    = 0.75 + 0.35 * sin(uTime * 5.8);
+      float coreGlow = smoothstep(0.48, 0.0, rPupil);
+      col = mix(col, uBoltCyan  * 7.0 * pulse, coreGlow * NDotV);
+      col = mix(col, uCoreWhite * 14.0 * pulse, inPupil  * NDotV);
+
+      // ── 4. Lightning Bolts radiating directly from moving pupilCenter ──
+      const int NB = 10;
+      float boltSum = 0.0;
+      vec3  boltCol = vec3(0.0);
+
+      for (int i = 0; i < NB; i++) {
+        float fi    = float(i);
+        float drift = uTime * 0.10 * (hash11(fi * 3.71) * 2.0 - 1.0);
+        float angle = (fi / float(NB)) * 6.28318 + drift;
+        float ca = cos(-angle), sa = sin(-angle);
+        vec2 local = vec2(ca * toPupil.x - sa * toPupil.y,
+                          sa * toPupil.x + ca * toPupil.y);
+        if (local.x < 0.01) continue;
+
+        float seed   = fi * 7.339 + 42.1;
+        float rMax   = irisOuter * (0.65 + hash11(fi * 1.91) * 0.35);
+        float jitter = 0.06 + hash11(fi * 2.37) * 0.08;
+        float spd    = 3.0  + hash11(fi * 0.53) * 3.0;
+
+        float bolt = lightningBolt(local, seed, rMax, jitter, spd) * NDotV;
+        float iv   = step(0.5, hash11(fi * 5.17));
+        boltSum += bolt;
+        boltCol += mix(uBoltCyan, uBoltViolet, iv) * bolt;
+      }
+      boltSum = clamp(boltSum, 0.0, 1.0);
+      if (boltSum > 0.001) boltCol /= (boltSum * 5.0 + 0.001);
+      boltCol *= boltSum;
+      col = mix(col, boltCol * 8.0, inIris * boltSum);
+
+      // ── 5. Iris ambient glow ───────────────────────────────────────────
+      col += uBoltCyan * inIris * NDotV * (0.40 + 0.20 * sin(uTime * 2.5 + rPupil * 15.0));
+
+      // ── 6. Amber Corona Ring (anchored at iris perimeter) ─────────────
+      float rd = abs(rDisc - irisOuter * 0.94);
+      float rm = smoothstep(0.055, 0.0, rd) * NDotV;
+      col += uCoronaAmber * rm * (0.7 + 0.3 * sin(uTime * 4.0 + angDisc * 5.0)) * 5.0;
+
+      // ── 7. Fresnel electric rim ────────────────────────────────────────
+      col += uBoltCyan   * fresnel * 3.5;
+      col += uBoltViolet * fresnel * 1.5;
+
+      // ── 8. Dynamic Specular Catchlights (Moves in 1:1 sync with pupil) ──
+      // Primary glossy glint on top-right edge of moving pupil
+      vec2 toGlint1 = toPupil - vec2(0.045, 0.055);
+      float glint1  = smoothstep(0.065, 0.005, length(toGlint1)) * 2.2;
+
+      // Secondary subtle catchlight on bottom-left edge
+      vec2 toGlint2 = toPupil + vec2(0.035, 0.035);
+      float glint2  = smoothstep(0.035, 0.002, length(toGlint2)) * 1.2;
+
+      col += vec3(glint1 * 0.9 + glint2 * 0.7, glint1 + glint2, glint1 + glint2) * NDotV;
+
+      col = clamp(col, vec3(0.0), vec3(10.0));
       gl_FragColor = vec4(col, 1.0);
     }
   `;
 
   return new THREE.ShaderMaterial({
     uniforms: {
-      uOuterGold: { value: new THREE.Color('#FFB703') },     // Solar Gold
-      uRimGold: { value: new THREE.Color('#FFF275') },       // Sparkling Gold Highlight
-      uCavityColor: { value: new THREE.Color('#020106') },   // Deep Obsidian
-      uPupilColor: { value: new THREE.Color('#FFFFFF') },    // White-Hot Core
-      uGlow: { value: 2.5 },                                 // Radiant pupil glow
-      uTime: { value: 0.0 },
+      uVoidColor:   { value: new THREE.Color('#010208') },
+      uBoltCyan:    { value: new THREE.Color('#00FFFF') },
+      uBoltViolet:  { value: new THREE.Color('#BF5FFF') },
+      uCoreWhite:   { value: new THREE.Color('#FFFFFF') },
+      uCoronaAmber: { value: new THREE.Color('#FFB300') },
+      uPupilOffset: { value: new THREE.Vector2(0, 0) },
+      uTime:        { value: 0.0 },
     },
     vertexShader,
     fragmentShader,
     depthTest: true,
     depthWrite: true,
     toneMapped: false,
+    transparent: false,
   });
 }
+
+
 
 /**
  * Quantum Singularity Core Shader for Maze_Maze_0
@@ -801,6 +1028,7 @@ function createSingularityCoreMaterial() {
   });
 }
 
+
 export const CELESTIAL_CONFIG = {
   baseScale: 0.75,      // 75% size by default
   hoverScale: 1.00,     // 100% size on hover (full original scale)
@@ -817,8 +1045,17 @@ export const CELESTIAL_CONFIG = {
  */
 export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
   const rootRef = useRef();
+  const headGroupRef = useRef(null);
+  const bodyMeshRef = useRef(null);
   const orbitRefs = useRef([]);
   const shaderMatsRef = useRef([]);
+  const eyeMatsRef = useRef([]);
+  const eyeMeshesRef = useRef([]);
+  // ── Multi-Eye 6-Track Inertia Buffers: independent micro-lag per eye ─
+  const smoothEyeRefs  = useRef(Array.from({ length: 6 }, () => ({ x: 0, y: 0 })));
+  const smoothHeadRef  = useRef({ x: 0, y: 0 }); // Head Assembly inertia buffer
+  // ── Soft Return-to-Center Target (lerps to 0 gradually on mouse leave) ─
+  const mouseTargetRef = useRef({ x: 0, y: 0 });
   const hitAreaRef = useRef();
   const targetScaleRef = useRef(CELESTIAL_CONFIG.baseScale);
   const currentScaleRef = useRef(CELESTIAL_CONFIG.baseScale);
@@ -830,9 +1067,11 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
 
     let foundMaze = null;
 
+    // 6 Independent Eye Material Instances for True Parallax Convergence
+    const eyeMaterials = Array.from({ length: 6 }, () => createOpticalEyeMaterial());
+
     // Shared Material Pool to prevent WebGL pipeline recompilation and black flickering
     const matPool = {
-      eye: createOpticalEyeMaterial(),
       mask: createProceduralCyberShaderMaterial({
         baseColor: '#080214',
         lineColor: '#C084FC',
@@ -841,6 +1080,39 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
         lineWidth: 0.046,
         glow: 1.85,
         bilateral: true,
+        isMask: true,
+        eyeCenters: [
+          new THREE.Vector3(0.1005, -0.4056, 0.3008),
+          new THREE.Vector3(0.3569, -0.3459, 0.4423),
+          new THREE.Vector3(-0.3463, -0.3464, 0.4100),
+          new THREE.Vector3(-0.1730, -0.4236, 0.0655),
+          new THREE.Vector3(0.1228, -0.4222, -0.1640),
+          new THREE.Vector3(0.2800, -0.3951, 0.0834),
+        ],
+        eyeT: [
+          new THREE.Vector3(0.9953, 0.0874, 0.0423),
+          new THREE.Vector3(0.9437, 0.2501, -0.2165),
+          new THREE.Vector3(0.9163, -0.4006, -0.0015),
+          new THREE.Vector3(0.9625, -0.2400, -0.1265),
+          new THREE.Vector3(0.9050, 0.1711, -0.3895),
+          new THREE.Vector3(0.9511, 0.3081, -0.0219),
+        ],
+        eyeB: [
+          new THREE.Vector3(-0.0936, 0.7471, 0.6581),
+          new THREE.Vector3(-0.0902, 0.8242, 0.5590),
+          new THREE.Vector3(0.2999, 0.6835, 0.6654),
+          new THREE.Vector3(0.2428, 0.5537, 0.7966),
+          new THREE.Vector3(0.1973, 0.6422, 0.7407),
+          new THREE.Vector3(-0.2140, 0.7084, 0.6726),
+        ],
+        eyeRadii: [
+          new THREE.Vector2(0.085, 0.040),
+          new THREE.Vector2(0.092, 0.044),
+          new THREE.Vector2(0.094, 0.046),
+          new THREE.Vector2(0.080, 0.038),
+          new THREE.Vector2(0.092, 0.052),
+          new THREE.Vector2(0.096, 0.060),
+        ],
       }),
       robe: createProceduralCyberShaderMaterial({
         baseColor: '#001408',
@@ -877,17 +1149,17 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
         lineWidth: 0.044,
         glow: 1.85,
         bilateral: true,
+        isBody: true,
       }),
       maze: createSingularityCoreMaterial(),
     };
 
-    const replacements = [];
+    const eyeMeshes = [];
+    const headNodesSet = new Set();
+
+    // Traverse to apply materials and collect head component parent nodes
     cloned.traverse((child) => {
       if (!child.isMesh && !child.isSkinnedMesh) return;
-      replacements.push(child);
-    });
-
-    replacements.forEach((child) => {
       const meshName = child.name;
 
       // ── Hide Zweihander Sword Completely ──────────────────────────────
@@ -911,9 +1183,13 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
 
       // ── Native Optical Emissive Shader for the 6 Eyes ─────────────────
       if (meshName.startsWith('Eye')) {
-        child.material = matPool.eye;
+        const eyeIdx = eyeMeshes.length;
+        const mat = eyeMaterials[eyeIdx] || createOpticalEyeMaterial();
+        child.material = mat;
         child.visible = true;
         child.renderOrder = 8;
+        eyeMeshes.push(child);
+        if (child.parent) headNodesSet.add(child.parent);
         return;
       }
 
@@ -922,6 +1198,16 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
         child.material = matPool.mask;
         child.visible = true;
         child.renderOrder = 5;
+        if (child.parent) headNodesSet.add(child.parent);
+        return;
+      }
+
+      // ── Procedural Violet Facet Shader for Straps ────────────────────
+      if (meshName.startsWith('straps') || meshName.includes('Straps')) {
+        child.material = matPool.straps;
+        child.visible = true;
+        child.renderOrder = 6;
+        if (child.parent) headNodesSet.add(child.parent);
         return;
       }
 
@@ -933,14 +1219,6 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
         return;
       }
 
-      // ── Procedural Violet Facet Shader for Straps ────────────────────
-      if (meshName.startsWith('straps') || meshName.includes('Straps')) {
-        child.material = matPool.straps;
-        child.visible = true;
-        child.renderOrder = 6;
-        return;
-      }
-
       // ── Procedural Electric Cyan Facet Shader for Hand ───────────────
       if (meshName.startsWith('Hand') || meshName.includes('Hand')) {
         child.material = matPool.hand;
@@ -949,13 +1227,35 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
         return;
       }
 
-      // ── Default: Procedural Electric Cyan Facet Shader for Body & Neck
+      // ── Default: Intact Continuous Body & Neck Material ──────────────
+      if (meshName.startsWith('Body_Body') || meshName === 'Body_Body_0') {
+        bodyMeshRef.current = child;
+      }
       child.material = matPool.body;
       child.visible = true;
       child.renderOrder = 3;
     });
 
-    shaderMatsRef.current = Object.values(matPool);
+    // ── Restructure Scene Graph for Full Unified Head Unit Articulation ──
+    const rootNode = cloned.getObjectByName('RootNode') || cloned;
+
+    // Neck Pivot in RootNode space (center of the neck collar)
+    const NECK_PIVOT_LOCAL = new THREE.Vector3(0.801, 715.0, -40.99);
+    const headPivotGroup = new THREE.Group();
+    headPivotGroup.name = 'HeadPivotGroup';
+    headPivotGroup.position.copy(NECK_PIVOT_LOCAL);
+    rootNode.add(headPivotGroup);
+
+    // Reparent all head components (Mask + Straps + 6 Eyes) into headPivotGroup
+    headNodesSet.forEach((node) => {
+      node.position.sub(NECK_PIVOT_LOCAL);
+      headPivotGroup.add(node);
+    });
+
+    headGroupRef.current = headPivotGroup;
+    shaderMatsRef.current = [...Object.values(matPool), ...eyeMaterials];
+    eyeMatsRef.current = eyeMaterials;
+    eyeMeshesRef.current = eyeMeshes;
 
     // Auto-scale to TARGET_HEIGHT
     const bbox = new THREE.Box3().setFromObject(cloned);
@@ -980,10 +1280,141 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
       }
     });
 
+    // ── Mouse Target: lerps gradually to 0 when mouse leaves (no hard snap) ─
+    const storeState = useCockpitStore.getState();
+    const rawMouse = storeState.mouseNorm || { x: 0, y: 0 };
+    const isInsideCanvas = storeState.isMouseActive;
+
+    if (isInsideCanvas) {
+      // Mouse is inside: track actual position with a gentle lead-in
+      mouseTargetRef.current.x = THREE.MathUtils.lerp(mouseTargetRef.current.x, rawMouse.x, 0.18);
+      mouseTargetRef.current.y = THREE.MathUtils.lerp(mouseTargetRef.current.y, rawMouse.y, 0.18);
+    } else {
+      // Mouse left: ease the TARGET itself gently toward (0,0) — lerp 0.025 = ~0.4s drift back
+      mouseTargetRef.current.x = THREE.MathUtils.lerp(mouseTargetRef.current.x, 0, 0.025);
+      mouseTargetRef.current.y = THREE.MathUtils.lerp(mouseTargetRef.current.y, 0, 0.025);
+    }
+    const mouse = mouseTargetRef.current;
+
+    // ── Head Assembly Inertia Buffer (Calm Sovereign Damping 0.05) ────
+    smoothHeadRef.current.x = THREE.MathUtils.lerp(smoothHeadRef.current.x, mouse.x, 0.05);
+    smoothHeadRef.current.y = THREE.MathUtils.lerp(smoothHeadRef.current.y, mouse.y, 0.05);
+
+    const hdX = smoothHeadRef.current.x;
+    const hdY = smoothHeadRef.current.y;
+
+    // ── Soft easeOut Clamp — prevents hard robot-like angle cutoff ──────
+    // softClamp(v, limit): asymptotically approaches ±limit, never snaps
+    const softClamp = (v, limit) => {
+      const sign = v >= 0 ? 1 : -1;
+      return sign * limit * (1 - Math.exp(-Math.abs(v) / limit));
+    };
+
+    // ── 1. Multi-Eye 3D Gaze Convergence & Parallax Tracking (Gaze Lead-In) ──
+    const lerpSpeeds = [0.15, 0.11, 0.14, 0.09, 0.13, 0.10];
+    const targetWorldX = mouse.x * 2.8;
+    const targetWorldY = mouse.y * 1.8 - 0.2;
+    const targetWorldZ = 2.4;
+
+    const tempEyeWorldPos = new THREE.Vector3();
+    const tempGaze = new THREE.Vector3();
+
+    eyeMeshesRef.current.forEach((eyeMesh, i) => {
+      const mat = eyeMatsRef.current[i];
+      if (!mat || !mat.uniforms || !mat.uniforms.uPupilOffset) return;
+
+      // Exact 3D world position of this eye
+      eyeMesh.getWorldPosition(tempEyeWorldPos);
+
+      // Gaze vector from eye to target in world space (Parallax Convergence)
+      tempGaze.set(
+        targetWorldX - tempEyeWorldPos.x,
+        targetWorldY - tempEyeWorldPos.y,
+        targetWorldZ - tempEyeWorldPos.z
+      ).normalize();
+
+      // Convert gaze vector to disc offset (wide stylized travel)
+      let targetOffsetX = tempGaze.x * 1.15;
+      let targetOffsetY = tempGaze.y * 1.15;
+
+      // Idle Scan & Saccades / Micro-tremors
+      if (!isInsideCanvas) {
+        const saccadeChance = Math.sin(t * 1.8 + i * 2.1);
+        const jump = saccadeChance > 0.82 ? Math.sin(t * 8.0 + i * 3.7) * 0.18 : 0.0;
+        const idleNoiseX = Math.sin(t * (0.8 + i * 0.25) + i * 1.3) * 0.12 + jump;
+        const idleNoiseY = Math.cos(t * (0.6 + i * 0.20) + i * 2.7) * 0.08;
+        targetOffsetX += idleNoiseX;
+        targetOffsetY += idleNoiseY;
+      } else {
+        const microTremorX = Math.sin(t * 14.0 + i * 4.2) * 0.015;
+        const microTremorY = Math.cos(t * 12.0 + i * 3.1) * 0.012;
+        targetOffsetX += microTremorX;
+        targetOffsetY += microTremorY;
+      }
+
+      // Stylized travel limit clamp (~0.58)
+      const maxRange = 0.58;
+      const currentLen = Math.hypot(targetOffsetX, targetOffsetY);
+      if (currentLen > maxRange) {
+        targetOffsetX = (targetOffsetX / currentLen) * maxRange;
+        targetOffsetY = (targetOffsetY / currentLen) * maxRange;
+      }
+
+      // Smooth per-eye independent lerp (Multi-Eye Micro-Lag / Gaze Lead-In)
+      const lSpeed = lerpSpeeds[i] || 0.12;
+      smoothEyeRefs.current[i].x = THREE.MathUtils.lerp(smoothEyeRefs.current[i].x, targetOffsetX, lSpeed);
+      smoothEyeRefs.current[i].y = THREE.MathUtils.lerp(smoothEyeRefs.current[i].y, targetOffsetY, lSpeed);
+
+      mat.uniforms.uPupilOffset.value.set(smoothEyeRefs.current[i].x, smoothEyeRefs.current[i].y);
+    });
+
+    // ── 2. Full Unified Head Unit Articulation (Yaw: ±20°, Pitch: ±12°) ──
+    const headIdleY = Math.sin(t * 0.80) * 0.012 + Math.sin(t * 1.37) * 0.005;
+    const headIdleX = Math.sin(t * 1.10) * 0.006 + Math.sin(t * 0.63) * 0.003;
+
+    // Mouse-driven head rotation: Yaw ±20° (~0.35 rad), Pitch ±12° (~0.21 rad) with soft ease-out
+    const headMouseY = softClamp(hdX * 0.22, 0.35);
+    const headMouseX = softClamp(-hdY * 0.14, 0.21);
+
+    const totalHeadYaw = headMouseY + headIdleY;
+    const totalHeadPitch = headMouseX + headIdleX;
+
+    if (headGroupRef.current) {
+      headGroupRef.current.rotation.y = totalHeadYaw;
+      headGroupRef.current.rotation.x = totalHeadPitch;
+    }
+
+    // ── 3. Update Exact 4x4 Head Skinning Matrix on Continuous Neck Body Mesh ──
+    if (headGroupRef.current && bodyMeshRef.current) {
+      const headGroup = headGroupRef.current;
+
+      const pivotInBodyMesh = new THREE.Vector3(0.0, 0.166876, 0.161891);
+
+      // Delta rotation of head in bodyMesh local space:
+      // Body node has rotation -PI/2 on X relative to RootNode:
+      // R_body = [-0.7071068, 0, 0, 0.7071067]
+      // deltaQuatLocal = R_body^-1 * headGroup.quaternion * R_body
+      const bodyQuatInRoot = new THREE.Quaternion(-0.7071068, 0, 0, 0.7071067);
+      const headQuatInRoot = headGroup.quaternion.clone();
+      const deltaQuat = bodyQuatInRoot.clone().invert().multiply(headQuatInRoot).multiply(bodyQuatInRoot);
+
+      const uHeadMatrix = new THREE.Matrix4();
+      const m1 = new THREE.Matrix4().makeTranslation(-pivotInBodyMesh.x, -pivotInBodyMesh.y, -pivotInBodyMesh.z);
+      const m2 = new THREE.Matrix4().makeRotationFromQuaternion(deltaQuat);
+      const m3 = new THREE.Matrix4().makeTranslation(pivotInBodyMesh.x, pivotInBodyMesh.y, pivotInBodyMesh.z);
+      uHeadMatrix.multiplyMatrices(m3, m2).multiply(m1);
+
+      shaderMatsRef.current.forEach((mat) => {
+        if (mat.uniforms && mat.uniforms.uHeadMatrix) {
+          mat.uniforms.uHeadMatrix.value.copy(uHeadMatrix);
+        }
+      });
+    }
+
+    // ── 4. Torso Grounding: ZERO mouse tilt, only calm levitation bobbing ──
     if (rootRef.current) {
       rootRef.current.position.y = position[1] + Math.sin(t * 1.1) * 0.02;
-      rootRef.current.rotation.y = 0;
-      rootRef.current.rotation.x = 0;
+      rootRef.current.rotation.set(0, 0, 0);
     }
 
     // Dynamic scale interpolation (defaults to 50%, smoothly scales to 75% on hover)

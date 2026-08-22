@@ -3,7 +3,9 @@ import { create } from 'zustand';
 export const useCockpitStore = create((set) => ({
   // Mouse tracking — normalized [-1, 1]
   mouseNorm: { x: 0, y: 0 },
-  setMouseNorm: (x, y) => set({ mouseNorm: { x, y } }),
+  isMouseActive: false,
+  setMouseNorm: (x, y) => set({ mouseNorm: { x, y }, isMouseActive: true }),
+  setMouseInactive: () => set({ isMouseActive: false }),
 
   // Orbit navigation
   activePanel: 0,           // 0=About 1=Skills 2=Projects 3=Blog 4=Contact
