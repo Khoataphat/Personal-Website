@@ -1,5 +1,13 @@
 import { create } from 'zustand';
 
+export const SECTION_THEMES = [
+  { id: 0, label: 'ABOUT',   accent: '#00f2fe', secondary: '#818cf8', rgb: [0, 242, 254], name: 'Ice Cyan' },
+  { id: 1, label: 'SKILLS',  accent: '#00ff88', secondary: '#00e5ff', rgb: [0, 255, 136], name: 'Neon Emerald' },
+  { id: 2, label: 'WORK',    accent: '#a855f7', secondary: '#ec4899', rgb: [168, 85, 247], name: 'Quantum Purple' },
+  { id: 3, label: 'BLOG',    accent: '#f59e0b', secondary: '#ef4444', rgb: [245, 158, 11], name: 'Solar Amber' },
+  { id: 4, label: 'CONTACT', accent: '#f43f5e', secondary: '#a855f7', rgb: [244, 63, 94], name: 'Cosmic Rose' },
+];
+
 export const useCockpitStore = create((set) => ({
   // Mouse tracking — normalized [-1, 1]
   mouseNorm: { x: 0, y: 0 },
@@ -57,16 +65,24 @@ export const useCockpitStore = create((set) => ({
   // ── Minimalist Dark Editorial Dossier State ──────────────────────────
   isDossierOpen: false,
   activeDossierTab: 0, // 0=About, 1=Skills, 2=Work, 3=Blog, 4=Contact
+  activeThemeAccent: '#00f2fe',
+  orbScreenPos: { x: 0, y: 0 },
+  setOrbScreenPos: (pos) => set({ orbScreenPos: pos }),
   openDossier: (tabIndex = 0) => set({
     isDossierOpen: true,
     activeDossierTab: tabIndex,
     activeCard: tabIndex,
+    activeThemeAccent: SECTION_THEMES[tabIndex]?.accent || '#00f2fe',
     isCardExpanded: false,
   }),
-  closeDossier: () => set({ isDossierOpen: false }),
+  closeDossier: () => set({
+    isDossierOpen: false,
+    activeThemeAccent: '#00f2fe',
+  }),
   switchDossierTab: (tabIndex) => set({
     activeDossierTab: tabIndex,
     activeCard: tabIndex,
+    activeThemeAccent: SECTION_THEMES[tabIndex]?.accent || '#00f2fe',
   }),
 }));
 
@@ -74,4 +90,5 @@ export const useCockpitStore = create((set) => ({
 if (typeof window !== 'undefined') {
   window.useCockpitStore = useCockpitStore;
 }
+
 

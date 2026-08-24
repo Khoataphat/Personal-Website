@@ -1,7 +1,9 @@
 import React, { useRef, useEffect, useState, Suspense } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { getGPUTier } from 'detect-gpu';
+import { useCockpitStore } from '../../store/cockpitStore';
 import { CosmicGalaxyBackdrop } from './CosmicGalaxyBackdrop';
 import { HeroBustAvatar } from './HeroBustAvatar';
 
@@ -71,6 +73,7 @@ function HeroCameraRig() {
   const sphericalRef = useRef({ ...DEFAULT_SPHERICAL });
   const isDraggingRef = useRef(false);
   const prevPointerRef = useRef({ x: 0, y: 0 });
+  const currentShiftXRef = useRef(0);
 
   useEffect(() => {
     if (!ENABLE_KEYBOARD_CONTROLS) return;
@@ -195,11 +198,36 @@ function HeroCameraRig() {
     }
 
     const isDossierOpen = useCockpitStore.getState().isDossierOpen;
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
 
-    // Smoothly adapt target spherical values based on Dossier state
-    const targetRadius = isDossierOpen ? 2.40 : DEFAULT_SPHERICAL.radius;
-    const targetPhi = isDossierOpen ? Math.PI * 0.51 : DEFAULT_SPHERICAL.phi;
-    const targetTheta = isDossierOpen ? -0.10 : DEFAULT_SPHERICAL.theta;
+    // Smoothly adapt target spherical values based on Split Stage vs Sovereign Hero
+    let targetRadius = DEFAULT_SPHERICAL.radius;
+    let targetPhi = DEFAULT_SPHERICAL.phi;
+    let targetTheta = DEFAULT_SPHERICAL.theta;
+    let targetX = 0;
+    let targetY = 0.05;
+    let targetShiftX = 0;
+
+    if (isDossierOpen) {
+      if (isDesktop) {
+        // True Frontal Square View (Z-axis 100% perpendicular to chest) + Asymmetric Camera Frustum Shift
+        targetRadius = 2.05;
+        targetPhi = Math.PI * 0.50; // Dead eye level
+        targetTheta = 0.0;          // 100% frontal, zero orbit angle
+        targetX = 0;
+        targetY = 0.05;
+        // Shift frustum projection so model sits at ~76.5% viewport with ZERO oblique distortion
+        targetShiftX = -(window.innerWidth * 0.265);
+      } else {
+        // Mobile Full Drawer: Lift avatar slightly to head level
+        targetRadius = 2.45;
+        targetPhi = Math.PI * 0.51;
+        targetTheta = -0.10;
+        targetX = 0;
+        targetY = 0.18;
+        targetShiftX = 0;
+      }
+    }
 
     if (!ENABLE_KEYBOARD_CONTROLS && !isDraggingRef.current) {
       s.radius += (targetRadius - s.radius) * Math.min(1, delta * 3.5);
@@ -207,8 +235,26 @@ function HeroCameraRig() {
       s.theta += (targetTheta - s.theta) * Math.min(1, delta * 3.5);
     }
 
-    const targetX = 0;
-    const targetY = isDossierOpen ? 0.15 : 0.05;
+    // Smooth Asymmetric Frustum Shift
+    currentShiftXRef.current = THREE.MathUtils.lerp(
+      currentShiftXRef.current,
+      targetShiftX,
+      Math.min(1, delta * 7.5)
+    );
+
+    if (Math.abs(currentShiftXRef.current) > 1.0 && typeof window !== 'undefined') {
+      camera.setViewOffset(
+        window.innerWidth,
+        window.innerHeight,
+        currentShiftXRef.current,
+        0,
+        window.innerWidth,
+        window.innerHeight
+      );
+    } else if (camera.view !== null) {
+      camera.clearViewOffset();
+    }
+
     const targetZ = 0;
 
     // Spherical to Cartesian calculation
@@ -241,12 +287,16 @@ function HeroCameraRig() {
  *   - Background matrix deep space
  *   - HeroBustAvatar (close-up framed at AVATAR_Y = -2.85)
  *   - Cinematic Ultra Close-up Camera Rig (z = 1.95, targetY = 0.02)
+ *   - Dynamic Reactor Core Lighting tied to activeThemeAccent
+ *   - Reading Performance Shield with Adaptive DPR
  *   - Cinematic lights & adaptive Bloom postprocessing
  */
 export function HeroCosmicScene() {
   const [gpuTier, setGpuTier] = useState(2);
   const setMouseNorm = useCockpitStore((s) => s.setMouseNorm);
   const setMouseInactive = useCockpitStore((s) => s.setMouseInactive);
+  const isDossierOpen = useCockpitStore((s) => s.isDossierOpen);
+  const activeThemeAccent = useCockpitStore((s) => s.activeThemeAccent || '#00f2fe');
 
   useEffect(() => {
     let alive = true;
@@ -277,13 +327,20 @@ export function HeroCosmicScene() {
           alpha: true,
           powerPreference: 'high-performance',
         }}
-        dpr={isHighTier ? [1, 1.5] : 1}
+        dpr={isDossierOpen ? 1.0 : (isHighTier ? [1, 1.5] : 1)}
       >
         <HeroCameraRig />
         <TelemetryTracker />
 
         {/* Cinematic Cold Cosmic Lighting — Deep Void + Solar Gold Rim */}
         <ambientLight intensity={0.18} />
+        {/* Dynamic Orb Reactor Core Light (Active Theme Accent) */}
+        <pointLight
+          color={activeThemeAccent}
+          position={[0.35, -0.20, 0.65]}
+          intensity={isDossierOpen ? 5.5 : 2.8}
+          distance={4.5}
+        />
         {/* Front Key Light (Ice Cyan — subtle, cool) */}
         <pointLight color="#00d4f5" position={[0, 2.4, 2.0]} intensity={2.2} />
         {/* Left Cold Fill Light (Midnight Indigo) */}
@@ -292,7 +349,8 @@ export function HeroCosmicScene() {
         <pointLight color="#ffaa00" position={[2.2, 0.5, -2.0]} intensity={4.8} />
         {/* Back-Left Cool Rim (Steel Blue — counterbalance) */}
         <pointLight color="#2060dd" position={[-1.8, 0.8, -2.5]} intensity={1.6} />
-        {/* Bottom Subtle Cyan Fill */}
+        {/* Bottom Subtle Fill */}
+        <pointLight color={activeThemeAccent} position={[0, -2.0, 1.0]} intensity={0.9} />
         <pointLight color="#0088aa" position={[0, -2.0, 1.0]} intensity={0.8} />
 
         {/* Deep Void Cosmic Backdrop — Stars, Nebula, God Rays */}

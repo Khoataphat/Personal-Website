@@ -1,23 +1,16 @@
 import React from 'react';
 import { useCockpitStore } from '../../store/cockpitStore';
 import { soundFx } from '../../services/soundFx';
-import { Volume2, VolumeX } from 'lucide-react';
-
-const NAV_ITEMS = [
-  { id: 0, label: 'ABOUT' },
-  { id: 1, label: 'SKILLS' },
-  { id: 2, label: 'WORK' },
-  { id: 3, label: 'BLOG' },
-  { id: 4, label: 'CONTACT' },
-];
+import { Volume2, VolumeX, Radio, Sparkles } from 'lucide-react';
 
 /**
  * HeroTopNav
  *
- * Top navigation bar for the Hero Cosmic Scene.
- * Left: Cyberpunk brand logo (KHOA) + System telemetry.
- * Right: Nav links that directly open the ExpandedDetailModal for that section.
- *        Includes Audio ON/OFF toggle.
+ * Refactored into two independent Floating Cyber HUD elements:
+ * 1. Top-Left: Floating Glass Brand Island (Logo "K" + Name "KHOA" + System/FPS Telemetry)
+ * 2. Top-Right: Floating Audio Toggle Pill (Glassmorphic Audio On/Off state)
+ *
+ * The full-width top navigation bar has been removed to free up 100% of the 3D Cosmos sky.
  */
 export function HeroTopNav() {
   const isAudioMuted = useCockpitStore((s) => s.isAudioMuted);
@@ -25,26 +18,14 @@ export function HeroTopNav() {
   const telemetry = useCockpitStore((s) => s.telemetry);
   
   const isDossierOpen = useCockpitStore((s) => s.isDossierOpen);
-  const activeDossierTab = useCockpitStore((s) => s.activeDossierTab);
-  const openDossier = useCockpitStore((s) => s.openDossier);
   const closeDossier = useCockpitStore((s) => s.closeDossier);
-  const switchDossierTab = useCockpitStore((s) => s.switchDossierTab);
-
-  const handleNavClick = (id) => {
-    soundFx.playDockClick?.();
-    const state = useCockpitStore.getState();
-    if (!state.isDossierOpen) {
-      state.openDossier?.(id);
-    } else {
-      state.switchDossierTab?.(id);
-    }
-  };
 
   const handleBrandClick = () => {
-    const state = useCockpitStore.getState();
-    if (state.isDossierOpen) {
+    if (isDossierOpen) {
       soundFx.playClose?.();
-      state.closeDossier?.();
+      closeDossier?.();
+    } else {
+      soundFx.playDockClick?.();
     }
   };
 
@@ -54,136 +35,119 @@ export function HeroTopNav() {
   };
 
   return (
-    <div
-      className="fixed top-0 left-0 right-0 z-40 pointer-events-none"
-      style={{ fontFamily: "'Share Tech Mono', 'Courier New', monospace" }}
-    >
-      <div
-        className="pointer-events-auto flex items-center justify-between px-5 sm:px-8 py-3 sm:py-4"
-        style={{
-          background: 'rgba(5, 5, 14, 0.75)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(0, 242, 254, 0.12)',
-          boxShadow: '0 4px 30px rgba(0,0,0,0.5)',
-        }}
+    <>
+      {/* ── 1. Top-Left Floating Glass Brand Island ─────────────────── */}
+      <aside
+        aria-label="System Identity & Telemetry"
+        className="fixed top-4 left-4 sm:top-6 sm:left-8 z-[60] pointer-events-auto select-none"
+        style={{ fontFamily: "'Share Tech Mono', 'Courier New', monospace", zIndex: 60 }}
       >
-        {/* ── Logo / Brand ─────────────────────────────────── */}
-        <div
+        <button
+          type="button"
           onClick={handleBrandClick}
-          className="flex items-center gap-3 cursor-pointer group"
-          title={isDossierOpen ? "Return to Cosmos Hero" : "Dang Khoa Sovereign System"}
+          aria-label={isDossierOpen ? "Close dossier and return to Cosmos Hero view" : "Dang Khoa Sovereign System online"}
+          className="flex items-center gap-3 px-3.5 py-2.5 sm:px-4 sm:py-2.5 rounded-xl cursor-pointer group transition-all duration-300 hover:scale-[1.02] active:scale-95 text-left border-0 focus:outline-none"
+          style={{
+            background: 'rgba(6, 7, 16, 0.72)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(0, 242, 254, 0.22)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 242, 254, 0.1)',
+          }}
+          title={isDossierOpen ? "Click to return to Cosmos Hero [ESC]" : "Dang Khoa Sovereign Architecture"}
         >
+          {/* Glowing Brand Monogram Box */}
           <div
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:shadow-[0_0_15px_rgba(0,242,254,0.7)]"
             style={{
-              width: '28px',
-              height: '28px',
-              border: '2px solid #00f2fe',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 0 10px rgba(0,242,254,0.4)',
-              transition: 'all 0.2s',
+              background: 'linear-gradient(135deg, rgba(0,242,254,0.2) 0%, rgba(121,40,202,0.2) 100%)',
+              border: '1.5px solid #00f2fe',
+              boxShadow: '0 0 10px rgba(0, 242, 254, 0.35)',
             }}
-            className="group-hover:border-white group-hover:scale-105"
           >
-            <span style={{ color: '#00f2fe', fontSize: '14px', fontWeight: 'bold', lineHeight: 1 }}>K</span>
-          </div>
-          <div>
-            <div
+            <span
               style={{
-                fontSize: '13px',
-                fontWeight: 'bold',
-                letterSpacing: '4px',
-                color: '#ffffff',
-                textShadow: '0 0 12px rgba(0,242,254,0.4)',
-              }}
-            >
-              KHOA
-            </div>
-            <div
-              style={{
-                fontSize: '8px',
-                letterSpacing: '2px',
                 color: '#00f2fe',
-                opacity: 0.7,
+                fontSize: '13px',
+                fontWeight: 900,
+                fontFamily: "'Outfit', sans-serif",
+                lineHeight: 1,
+                textShadow: '0 0 8px rgba(0,242,254,0.8)',
               }}
             >
-              {telemetry.fps > 0 ? `FPS: ${telemetry.fps} · ` : ''}{isDossierOpen ? 'EDITORIAL ACTIVE' : (telemetry.utcClock || 'SYSTEM ONLINE')}
-            </div>
+              K
+            </span>
           </div>
-        </div>
 
-        {/* ── Nav Links (Clicking opens/switches Minimalist Editorial Dossier) ── */}
-        <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto max-w-[65vw] sm:max-w-none no-scrollbar py-1">
-          {NAV_ITEMS.map((item) => {
-            const isActive = isDossierOpen && activeDossierTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleNavClick(item.id)}
+          {/* Brand Name & Live Telemetry */}
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <span
                 style={{
-                  background: isActive ? 'rgba(0,242,254,0.18)' : 'transparent',
-                  border: `1px solid ${isActive ? 'rgba(0,242,254,0.7)' : 'rgba(255,255,255,0.06)'}`,
-                  borderRadius: '6px',
-                  color: isActive ? '#00f2fe' : 'rgba(255,255,255,0.7)',
-                  fontSize: '10px',
-                  letterSpacing: '2px',
-                  padding: '6px 12px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
-                  textShadow: isActive ? '0 0 10px rgba(0,242,254,0.7)' : 'none',
-                  fontFamily: 'inherit',
-                  whiteSpace: 'nowrap',
-                }}
-                onMouseOver={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.color = '#00f2fe';
-                    e.currentTarget.style.borderColor = 'rgba(0,242,254,0.4)';
-                    e.currentTarget.style.background = 'rgba(0,242,254,0.05)';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)';
-                    e.currentTarget.style.background = 'transparent';
-                  }
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  letterSpacing: '3px',
+                  color: '#ffffff',
+                  fontFamily: "'Outfit', 'Orbitron', sans-serif",
+                  textShadow: '0 0 10px rgba(0,242,254,0.4)',
                 }}
               >
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
+                KHOA
+              </span>
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#00f2fe] animate-pulse" />
+            </div>
 
-        {/* ── Audio Toggle ──────────────────────────────────── */}
+            <div
+              className="flex items-center gap-1.5"
+              style={{
+                fontSize: '8.5px',
+                letterSpacing: '1.5px',
+                color: isDossierOpen ? '#00ff88' : '#00f2fe',
+                opacity: 0.85,
+              }}
+            >
+              {telemetry.fps > 0 && <span className="text-zinc-400">FPS {telemetry.fps} ·</span>}
+              <span>{isDossierOpen ? 'EDITORIAL ACTIVE' : (telemetry.utcClock || 'SYSTEM ONLINE')}</span>
+            </div>
+          </div>
+        </button>
+      </aside>
+
+      {/* ── 2. Top-Right Floating Audio Pill ────────────────────────── */}
+      <div
+        className="fixed top-4 right-4 sm:top-6 sm:right-8 z-[60] pointer-events-auto select-none"
+        style={{ fontFamily: "'Share Tech Mono', 'Courier New', monospace", zIndex: 60 }}
+      >
         <button
           onClick={handleMuteClick}
+          className="flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 group"
           style={{
-            background: !isAudioMuted ? 'rgba(0,242,254,0.08)' : 'rgba(255,255,255,0.04)',
-            border: `1px solid ${!isAudioMuted ? 'rgba(0,242,254,0.35)' : 'rgba(255,255,255,0.1)'}`,
-            borderRadius: '6px',
-            color: !isAudioMuted ? '#00f2fe' : 'rgba(255,255,255,0.35)',
-            padding: '6px 12px',
-            cursor: 'pointer',
-            fontSize: '10px',
-            letterSpacing: '1px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            transition: 'all 0.2s',
-            fontFamily: 'inherit',
+            background: !isAudioMuted ? 'rgba(0, 242, 254, 0.08)' : 'rgba(6, 7, 16, 0.72)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: `1px solid ${!isAudioMuted ? 'rgba(0, 242, 254, 0.4)' : 'rgba(255, 255, 255, 0.12)'}`,
+            boxShadow: !isAudioMuted
+              ? '0 4px 20px rgba(0, 242, 254, 0.2), 0 0 10px rgba(0, 242, 254, 0.1)'
+              : '0 4px 20px rgba(0, 0, 0, 0.5)',
+            color: !isAudioMuted ? '#00f2fe' : 'rgba(255, 255, 255, 0.4)',
           }}
+          title={!isAudioMuted ? "Mute interactive audio" : "Enable sci-fi sound FX"}
         >
-          {!isAudioMuted
-            ? <Volume2 size={13} style={{ color: '#00f2fe' }} />
-            : <VolumeX size={13} />
-          }
-          <span className="hidden sm:inline">{!isAudioMuted ? 'AUDIO ON' : 'MUTED'}</span>
+          {!isAudioMuted ? (
+            <>
+              <Volume2 className="w-3.5 h-3.5 text-[#00f2fe] animate-pulse" />
+              <span className="text-[10px] tracking-widest font-bold hidden sm:inline">AUDIO ON</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00f2fe] shadow-[0_0_6px_#00f2fe]" />
+            </>
+          ) : (
+            <>
+              <VolumeX className="w-3.5 h-3.5 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+              <span className="text-[10px] tracking-widest font-medium text-zinc-400 hidden sm:inline">MUTED</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
+            </>
+          )}
         </button>
       </div>
-    </div>
+    </>
   );
 }

@@ -462,7 +462,32 @@ function CurvedCyberCard({ item, radius, arcAngle = 0.74, height = 0.046 }) {
     });
   }, [texture]);
 
-  return <mesh geometry={geometry} material={material} />;
+  const handlePointerDown = (e) => {
+    e.stopPropagation();
+    const tabMap = { 'ABOUT': 0, 'SKILLS': 1, 'WORK': 2, 'BLOG': 3, 'CONTACT': 4 };
+    const tabIndex = tabMap[item.label] ?? 0;
+    const store = useCockpitStore.getState();
+    if (!store.isDossierOpen) {
+      store.openDossier(tabIndex);
+    } else {
+      store.switchDossierTab(tabIndex);
+    }
+  };
+
+  return (
+    <mesh
+      geometry={geometry}
+      material={material}
+      onPointerDown={handlePointerDown}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        document.body.style.cursor = 'pointer';
+      }}
+      onPointerOut={() => {
+        document.body.style.cursor = 'auto';
+      }}
+    />
+  );
 }
 
 /**
@@ -1103,6 +1128,8 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
   const rootRef = useRef();
   const headGroupRef = useRef(null);
   const bodyMeshRef = useRef(null);
+  const mazeMatRef = useRef(null);
+  const currentHeadRotRef = useRef({ yaw: 0, pitch: 0 });
   const orbitRefs = useRef([]);
   const shaderMatsRef = useRef([]);
   const eyeMatsRef = useRef([]);
@@ -1316,34 +1343,41 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
     });
 
     headGroupRef.current = headPivotGroup;
+    mazeMatRef.current = matPool.maze;
     shaderMatsRef.current = [...Object.values(matPool), ...eyeMaterials];
     eyeMatsRef.current = eyeMaterials;
     eyeMeshesRef.current = eyeMeshes;
 
     // Auto-scale to TARGET_HEIGHT
     const bbox = new THREE.Box3().setFromObject(cloned);
-    const size = new THREE.Vector3();
-    bbox.getSize(size);
-    if (size.y > 0) {
-      const s = TARGET_HEIGHT / size.y;
-      cloned.scale.setScalar(s);
-    }
+    const naturalHeight = bbox.max.y - bbox.min.y;
+    const initialScale = TARGET_HEIGHT / naturalHeight;
+    cloned.scale.setScalar(initialScale);
 
     return { dualLayerScene: cloned, mazeNode: foundMaze };
   }, [scene]);
 
   // Animation frame
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
+  useFrame((state, delta) => {
+    const t = state.clock.getElapsedTime();
+    const rawMouse = useCockpitStore.getState().mouseNorm || { x: 0, y: 0 };
+    const isInsideCanvas = useCockpitStore.getState().isMouseActive;
+    const isDossierOpen = useCockpitStore.getState().isDossierOpen;
+    const activeThemeAccent = useCockpitStore.getState().activeThemeAccent || '#00f2fe';
 
-    // ── Mouse Target & Speed Tracking ──────────────────────────────
-    const storeState = useCockpitStore.getState();
-    const rawMouse = storeState.mouseNorm || { x: 0, y: 0 };
-    const isInsideCanvas = storeState.isMouseActive;
+    // ── 0. Dynamic Singularity Core Plasma Shader Harmonization ───────
+    if (mazeMatRef.current && mazeMatRef.current.uniforms) {
+      const targetCol = new THREE.Color(activeThemeAccent);
+      mazeMatRef.current.uniforms.uCyanPlasma.value.lerp(targetCol, delta * 6.0);
+      const targetCol2 = targetCol.clone().offsetHSL(0.06, 0.0, 0.18);
+      mazeMatRef.current.uniforms.uPurplePlasma.value.lerp(targetCol2, delta * 6.0);
+    }
 
-    const rawSpeed = Math.min(3.0, Math.hypot(rawMouse.x - prevMouseRef.current.x, rawMouse.y - prevMouseRef.current.y) * 35.0);
+    const dx = rawMouse.x - prevMouseRef.current.x;
+    const dy = rawMouse.y - prevMouseRef.current.y;
+    const mouseSpeed = Math.hypot(dx, dy) / Math.max(0.001, delta);
     prevMouseRef.current = { x: rawMouse.x, y: rawMouse.y };
-    smoothMouseSpeedRef.current = THREE.MathUtils.lerp(smoothMouseSpeedRef.current, rawSpeed, 0.15);
+    smoothMouseSpeedRef.current = THREE.MathUtils.lerp(smoothMouseSpeedRef.current, Math.min(mouseSpeed, 8.0), 0.15);
 
     // Update breathing glow & mouse speed on all full-body shader materials
     shaderMatsRef.current.forEach((mat) => {
@@ -1372,7 +1406,6 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
     const hdY = smoothHeadRef.current.y;
 
     // ── Soft easeOut Clamp — prevents hard robot-like angle cutoff ──────
-    // softClamp(v, limit): asymptotically approaches ±limit, never snaps
     const softClamp = (v, limit) => {
       const sign = v >= 0 ? 1 : -1;
       return sign * limit * (1 - Math.exp(-Math.abs(v) / limit));
@@ -1436,20 +1469,32 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
       mat.uniforms.uPupilOffset.value.set(smoothEyeRefs.current[i].x, smoothEyeRefs.current[i].y);
     });
 
-    // ── 2. Full Unified Head Unit Articulation (Yaw: ±20°, Pitch: ±12°) ──
+    // ── 2. Full Unified Head Unit Articulation ────────────────────────
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
     const headIdleY = Math.sin(t * 0.80) * 0.012 + Math.sin(t * 1.37) * 0.005;
     const headIdleX = Math.sin(t * 1.10) * 0.006 + Math.sin(t * 0.63) * 0.003;
 
-    // Mouse-driven head rotation: Yaw ±20° (~0.35 rad), Pitch ±12° (~0.21 rad) with soft ease-out
+    // When Dossier is open: Head is locked facing left toward content (-0.42 rad ~ -24.1°)
     const headMouseY = softClamp(hdX * 0.22, 0.35);
     const headMouseX = softClamp(-hdY * 0.14, 0.21);
 
-    const totalHeadYaw = headMouseY + headIdleY;
-    const totalHeadPitch = headMouseX + headIdleX;
+    const targetHeadYaw = (isDossierOpen && isDesktop) ? -0.42 : (headMouseY + headIdleY);
+    const targetHeadPitch = (isDossierOpen && isDesktop) ? 0.04 : (headMouseX + headIdleX);
+
+    currentHeadRotRef.current.yaw = THREE.MathUtils.lerp(
+      currentHeadRotRef.current.yaw,
+      targetHeadYaw,
+      Math.min(1, delta * 4.5)
+    );
+    currentHeadRotRef.current.pitch = THREE.MathUtils.lerp(
+      currentHeadRotRef.current.pitch,
+      targetHeadPitch,
+      Math.min(1, delta * 4.5)
+    );
 
     if (headGroupRef.current) {
-      headGroupRef.current.rotation.y = totalHeadYaw;
-      headGroupRef.current.rotation.x = totalHeadPitch;
+      headGroupRef.current.rotation.y = currentHeadRotRef.current.yaw;
+      headGroupRef.current.rotation.x = currentHeadRotRef.current.pitch;
     }
 
     // ── 3. Update Exact 4x4 Head Skinning Matrix on Continuous Neck Body Mesh ──
@@ -1459,9 +1504,6 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
       const pivotInBodyMesh = new THREE.Vector3(0.0, 0.166876, 0.161891);
 
       // Delta rotation of head in bodyMesh local space:
-      // Body node has rotation -PI/2 on X relative to RootNode:
-      // R_body = [-0.7071068, 0, 0, 0.7071067]
-      // deltaQuatLocal = R_body^-1 * headGroup.quaternion * R_body
       const bodyQuatInRoot = new THREE.Quaternion(-0.7071068, 0, 0, 0.7071067);
       const headQuatInRoot = headGroup.quaternion.clone();
       const deltaQuat = bodyQuatInRoot.clone().invert().multiply(headQuatInRoot).multiply(bodyQuatInRoot);
@@ -1497,6 +1539,12 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
     if (mazeNode) {
       const worldPos = new THREE.Vector3();
       mazeNode.getWorldPosition(worldPos);
+
+      // Project 3D world position of the Singularity Core to 2D screen coordinates
+      const proj = worldPos.clone().project(state.camera);
+      const screenX = (proj.x * 0.5 + 0.5) * window.innerWidth;
+      const screenY = (-proj.y * 0.5 + 0.5) * window.innerHeight;
+      useCockpitStore.getState().setOrbScreenPos({ x: screenX, y: screenY });
 
       // Scale the singularity core sphere proportionally relative to its native GLB scale
       if (mazeNode.userData && mazeNode.userData.initialScale) {

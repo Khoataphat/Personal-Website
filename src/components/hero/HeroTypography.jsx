@@ -1,9 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useCockpitStore } from '../../store/cockpitStore';
 
-const VERTICAL_INDICATORS = ['01', '02', '03', '04', '05'];
-const SECTION_LABELS = ['ABOUT', 'SKILLS', 'WORK', 'BLOG', 'CONTACT'];
-
 // Clean cyber alphanumeric characters guaranteed to render perfectly in Outfit & Orbitron
 const CYBER_GLYPHS = '0123456789ABCDEFXYZ0101';
 
@@ -101,6 +98,7 @@ const MARQUEE_ROW_2_ITEMS = [
  */
 export function HeroBackgroundTypography() {
   const [mounted, setMounted] = useState(false);
+  const isDossierOpen = useCockpitStore((s) => s.isDossierOpen);
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 150);
@@ -130,8 +128,8 @@ export function HeroBackgroundTypography() {
     <div
       className="fixed inset-0 z-0 pointer-events-none flex flex-col items-center justify-center select-none overflow-hidden"
       style={{
-        opacity: mounted ? 0.50 : 0,
-        transition: 'opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1)',
+        opacity: isDossierOpen ? 0 : (mounted ? 0.50 : 0),
+        transition: 'opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
     >
       {/* Kinetic Container with Screen Edge Vignette */}
@@ -205,27 +203,20 @@ export function HeroBackgroundTypography() {
 export function HeroForegroundHUD() {
   const [mounted, setMounted] = useState(false);
   const isDossierOpen = useCockpitStore((s) => s.isDossierOpen);
-  const activeDossierTab = useCockpitStore((s) => s.activeDossierTab);
-  const openDossier = useCockpitStore((s) => s.openDossier);
-  const switchDossierTab = useCockpitStore((s) => s.switchDossierTab);
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 200);
     return () => clearTimeout(t);
   }, []);
 
-  const handleIndicatorClick = (i) => {
-    if (!isDossierOpen) {
-      openDossier(i);
-    } else {
-      switchDossierTab(i);
-    }
-  };
-
   return (
     <div
       className="fixed inset-0 z-20 pointer-events-none select-none"
-      style={{ fontFamily: "'Fira Code', monospace" }}
+      style={{
+        fontFamily: "'Fira Code', monospace",
+        opacity: isDossierOpen ? 0 : (mounted ? 1 : 0),
+        transition: 'opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+      }}
     >
       {/* Left Subtitle & Bio Badge */}
       <div
@@ -289,65 +280,6 @@ export function HeroForegroundHUD() {
             boxShadow: '0 0 10px rgba(0,242,254,0.6)',
           }}
         />
-      </div>
-
-      {/* Right Vertical Step Indicators */}
-      <div
-        style={{
-          position: 'absolute',
-          right: '2.5%',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '14px',
-          opacity: mounted ? 1 : 0,
-          transition: 'opacity 1s ease 0.4s',
-          pointerEvents: 'auto',
-        }}
-      >
-        {VERTICAL_INDICATORS.map((num, i) => {
-          const isActive = isDossierOpen && activeDossierTab === i;
-          return (
-            <button
-              key={i}
-              onClick={() => handleIndicatorClick(i)}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '4px 0',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                justifyContent: 'flex-end',
-              }}
-            >
-              <span
-                style={{
-                  fontSize: '9px',
-                  letterSpacing: '1.5px',
-                  color: isActive ? '#00f2fe' : 'rgba(255,255,255,0.3)',
-                  transition: 'color 0.3s, text-shadow 0.3s',
-                  fontFamily: "'Fira Code', monospace",
-                  textShadow: isActive ? '0 0 8px rgba(0,242,254,0.6)' : 'none',
-                }}
-              >
-                {isActive ? SECTION_LABELS[i] : num}
-              </span>
-              <div
-                style={{
-                  width: isActive ? '26px' : '6px',
-                  height: '2px',
-                  background: isActive ? '#00f2fe' : 'rgba(255,255,255,0.2)',
-                  borderRadius: '2px',
-                  transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                  boxShadow: isActive ? '0 0 10px rgba(0,242,254,0.8)' : 'none',
-                }}
-              />
-            </button>
-          );
-        })}
       </div>
 
       {/* Bottom Orbit Indicator */}
