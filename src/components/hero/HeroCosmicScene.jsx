@@ -6,6 +6,7 @@ import { getGPUTier } from 'detect-gpu';
 import { useCockpitStore } from '../../store/cockpitStore';
 import { CosmicGalaxyBackdrop } from './CosmicGalaxyBackdrop';
 import { HeroBustAvatar } from './HeroBustAvatar';
+import { QuantumPhotonStream3D } from './QuantumPhotonStream3D';
 
 /**
  * Telemetry tracker (FPS, UTC clock)
@@ -359,6 +360,8 @@ export function HeroCosmicScene() {
         {/* Dual-layer Bust Avatar (Framed at AVATAR_Y = -2.85) */}
         <Suspense fallback={null}>
           <HeroBustAvatar position={[0, -2.85, 0]} />
+          {/* 3D Quantum Photon Stream Particles */}
+          <QuantumPhotonStream3D />
         </Suspense>
 
         {/* Adaptive Bloom */}

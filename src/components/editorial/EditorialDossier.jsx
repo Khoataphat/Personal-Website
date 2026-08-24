@@ -6,6 +6,7 @@ import { projectsData } from '../../data/projects';
 import { blogsData } from '../../data/blogs';
 import { soundFx } from '../../services/soundFx';
 import { getAssetUrl } from '../../utils/urlHelper';
+import { QuantumPlasmaSpine } from './QuantumPlasmaSpine';
 import {
   User,
   Activity,
@@ -57,276 +58,6 @@ const DOSSIER_TABS = [
   { id: 3, label: 'BLOG', indexNum: '04', title: 'ENGINEERING TRANSMISSIONS' },
   { id: 4, label: 'CONTACT', indexNum: '05', title: 'SECURE COMMUNICATIONS' },
 ];
-
-/**
- * Volumetric Aurora Hologram Field Component
- * Photorealistic Northern Lights light cone and undulating energy ribbons fanning from 3D Orb into Obsidian Glass modal
- */
-function VolumetricAuroraField({ accentColor, secondaryColor, panelRef }) {
-  const orbScreenPos = useCockpitStore((s) => s.orbScreenPos);
-  const [coords, setCoords] = useState({
-    orbX: 0,
-    orbY: 0,
-    panelRight: 0,
-    topY: 0,
-    midY: 0,
-    botY: 0,
-    visible: false,
-  });
-
-  useEffect(() => {
-    const updatePoints = () => {
-      if (typeof window === 'undefined' || window.innerWidth < 768) {
-        setCoords((c) => ({ ...c, visible: false }));
-        return;
-      }
-      const panelEl = panelRef.current;
-      if (!panelEl) return;
-      const rect = panelEl.getBoundingClientRect();
-      const orbX = (orbScreenPos && orbScreenPos.x > 100) ? orbScreenPos.x : window.innerWidth * 0.78;
-      const orbY = (orbScreenPos && orbScreenPos.y > 50) ? orbScreenPos.y : window.innerHeight * 0.65;
-      const panelRight = rect.right;
-      const topY = rect.top + 70;
-      const midY = rect.top + rect.height * 0.50;
-      const botY = rect.bottom - 70;
-
-      setCoords({ orbX, orbY, panelRight, topY, midY, botY, visible: true });
-    };
-
-    updatePoints();
-    const handleResize = () => updatePoints();
-    window.addEventListener('resize', handleResize);
-    const interval = setInterval(updatePoints, 60);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      clearInterval(interval);
-    };
-  }, [panelRef, orbScreenPos]);
-
-  if (!coords.visible) return null;
-
-  const { orbX, orbY, panelRight, topY, midY, botY } = coords;
-  const spanX = orbX - panelRight;
-  const cpX1 = panelRight + spanX * 0.35;
-  const cpX2 = panelRight + spanX * 0.70;
-
-  // 1. Broad Volumetric Holographic Fan Area
-  const fanPathD = `
-    M ${orbX} ${orbY}
-    C ${cpX2} ${topY + 20}, ${cpX1} ${topY - 10}, ${panelRight} ${topY}
-    L ${panelRight} ${botY}
-    C ${cpX1} ${botY + 10}, ${cpX2} ${botY - 20}, ${orbX} ${orbY}
-    Z
-  `;
-
-  // 2. Upper Undulating Aurora Ribbon
-  const ribbonUpperD = `
-    M ${orbX} ${orbY}
-    C ${cpX2} ${topY + 60}, ${cpX1} ${topY + 10}, ${panelRight} ${topY + 20}
-    C ${cpX1} ${topY + 60}, ${cpX2} ${orbY - 15}, ${orbX} ${orbY}
-    Z
-  `;
-
-  // 3. Central Dynamic Shimmer Ribbon
-  const ribbonMidD = `
-    M ${orbX} ${orbY}
-    C ${cpX2} ${midY - 30}, ${cpX1} ${midY - 15}, ${panelRight} ${midY}
-    C ${cpX1} ${midY + 25}, ${cpX2} ${midY + 10}, ${orbX} ${orbY}
-    Z
-  `;
-
-  // 4. Lower Undulating Aurora Ribbon
-  const ribbonLowerD = `
-    M ${orbX} ${orbY}
-    C ${cpX2} ${botY - 20}, ${cpX1} ${botY - 40}, ${panelRight} ${botY - 20}
-    C ${cpX1} ${botY + 20}, ${cpX2} ${orbY + 25}, ${orbX} ${orbY}
-    Z
-  `;
-
-  // 5. Central Laser Core Streamline (Guiding flow)
-  const coreStreamD = `
-    M ${panelRight} ${midY}
-    C ${panelRight + spanX * 0.45} ${midY + 15}, ${orbX - spanX * 0.35} ${orbY + 10}, ${orbX} ${orbY}
-  `;
-
-  return (
-    <svg className="fixed inset-0 w-screen h-screen pointer-events-none z-40 overflow-visible aurora-field-container">
-      <defs>
-        {/* Soft Gaussian Blur Filters */}
-        <filter id="aurora-blur-wide" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="16" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-
-        <filter id="aurora-blur-soft" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="6" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-
-        <filter id="particle-glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-
-        {/* Volumetric Broad Fan Gradient */}
-        <linearGradient id="aurora-broad-grad" x1="100%" y1="50%" x2="0%" y2="50%">
-          <stop offset="0%" stopColor={accentColor} stopOpacity="0.45" />
-          <stop offset="35%" stopColor={secondaryColor} stopOpacity="0.25" />
-          <stop offset="75%" stopColor={accentColor} stopOpacity="0.18" />
-          <stop offset="100%" stopColor={accentColor} stopOpacity="0.0" />
-        </linearGradient>
-
-        {/* Upper Ribbon Gradient */}
-        <linearGradient id="aurora-upper-grad" x1="100%" y1="50%" x2="0%" y2="50%">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.80" />
-          <stop offset="25%" stopColor={accentColor} stopOpacity="0.65" />
-          <stop offset="65%" stopColor={secondaryColor} stopOpacity="0.40" />
-          <stop offset="100%" stopColor={accentColor} stopOpacity="0.0" />
-        </linearGradient>
-
-        {/* Central Ribbon Gradient */}
-        <linearGradient id="aurora-mid-grad" x1="100%" y1="50%" x2="0%" y2="50%">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-          <stop offset="30%" stopColor={accentColor} stopOpacity="0.75" />
-          <stop offset="70%" stopColor={secondaryColor} stopOpacity="0.50" />
-          <stop offset="100%" stopColor={accentColor} stopOpacity="0.10" />
-        </linearGradient>
-
-        {/* Lower Ribbon Gradient */}
-        <linearGradient id="aurora-lower-grad" x1="100%" y1="50%" x2="0%" y2="50%">
-          <stop offset="0%" stopColor={accentColor} stopOpacity="0.70" />
-          <stop offset="40%" stopColor={secondaryColor} stopOpacity="0.55" />
-          <stop offset="85%" stopColor={accentColor} stopOpacity="0.25" />
-          <stop offset="100%" stopColor={accentColor} stopOpacity="0.0" />
-        </linearGradient>
-
-        {/* Core Line Gradient */}
-        <linearGradient id="core-stream-grad" x1="100%" y1="0%" x2="0%" y2="0%">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-          <stop offset="50%" stopColor={accentColor} stopOpacity="0.85" />
-          <stop offset="100%" stopColor={secondaryColor} stopOpacity="0.60" />
-        </linearGradient>
-      </defs>
-
-      {/* Layer 1: Wide Volumetric Ethereal Light Cone Backdrop */}
-      <path
-        d={fanPathD}
-        fill="url(#aurora-broad-grad)"
-        filter="url(#aurora-blur-wide)"
-        className="aurora-fan-backdrop"
-        style={{ mixBlendMode: 'screen' }}
-      />
-
-      {/* Layer 2: Upper Flowing Aurora Ribbon with Shimmer */}
-      <path
-        d={ribbonUpperD}
-        fill="url(#aurora-upper-grad)"
-        filter="url(#aurora-blur-soft)"
-        className="aurora-ribbon-upper"
-        style={{ mixBlendMode: 'screen' }}
-      />
-
-      {/* Layer 3: Lower Flowing Aurora Ribbon */}
-      <path
-        d={ribbonLowerD}
-        fill="url(#aurora-lower-grad)"
-        filter="url(#aurora-blur-soft)"
-        className="aurora-ribbon-lower"
-        style={{ mixBlendMode: 'screen' }}
-      />
-
-      {/* Layer 4: Central Dense Resonant Ribbon */}
-      <path
-        d={ribbonMidD}
-        fill="url(#aurora-mid-grad)"
-        filter="url(#aurora-blur-soft)"
-        className="aurora-ribbon-mid"
-        style={{ mixBlendMode: 'screen' }}
-      />
-
-      {/* Layer 5: Vertical Striation Light Curtain Streaks */}
-      {[0.2, 0.35, 0.5, 0.65, 0.8].map((ratio, i) => {
-        const rayX = panelRight + spanX * ratio;
-        const topBound = topY + (orbY - topY) * (1 - ratio) * 0.6;
-        const botBound = botY - (botY - orbY) * (1 - ratio) * 0.6;
-        return (
-          <line
-            key={`ray-${i}`}
-            x1={rayX}
-            y1={topBound}
-            x2={rayX}
-            y2={botBound}
-            stroke={i % 2 === 0 ? accentColor : secondaryColor}
-            strokeWidth={1.5 + (1 - ratio) * 2}
-            strokeOpacity={0.25 + (1 - ratio) * 0.35}
-            strokeDasharray="4 6"
-            className="aurora-vertical-ray"
-            style={{ animationDelay: `${i * 0.3}s` }}
-          />
-        );
-      })}
-
-      {/* Layer 6: Core Guiding Laser Stream */}
-      <path
-        d={coreStreamD}
-        fill="none"
-        stroke="url(#core-stream-grad)"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        filter="url(#aurora-blur-soft)"
-        opacity="0.85"
-      />
-
-      {/* Layer 7: Floating Photon Stream Particles */}
-      {[0, 0.18, 0.36, 0.54, 0.72, 0.90].map((offset, i) => (
-        <circle key={`photon-${i}`} r={2.0 + (i % 3) * 0.8} fill="#ffffff" filter="url(#particle-glow)">
-          <animateMotion
-            path={coreStreamD}
-            dur={`${2.2 + (i % 3) * 0.4}s`}
-            repeatCount="indefinite"
-            begin={`${offset * 2.2}s`}
-            keyPoints="1;0"
-            keyTimes="0;1"
-          />
-          <animate
-            attributeName="opacity"
-            values="0;1;0.8;0"
-            dur={`${2.2 + (i % 3) * 0.4}s`}
-            repeatCount="indefinite"
-            begin={`${offset * 2.2}s`}
-          />
-        </circle>
-      ))}
-
-      {/* Layer 8: Projector Emitter Core Rings at 3D Orb Position */}
-      <circle cx={orbX} cy={orbY} r="14" fill="none" stroke={accentColor} strokeWidth="1.5" filter="url(#particle-glow)">
-        <animate attributeName="r" values="8;24;8" dur="2.8s" repeatCount="indefinite" />
-        <animate attributeName="opacity" values="0.8;0.1;0.8" dur="2.8s" repeatCount="indefinite" />
-      </circle>
-      <circle cx={orbX} cy={orbY} r="8" fill="none" stroke={secondaryColor} strokeWidth="1.2">
-        <animate attributeName="r" values="5;16;5" dur="1.9s" repeatCount="indefinite" />
-        <animate attributeName="opacity" values="0.9;0.2;0.9" dur="1.9s" repeatCount="indefinite" />
-      </circle>
-      <circle cx={orbX} cy={orbY} r="4" fill="#ffffff" filter="url(#particle-glow)" />
-
-      {/* Layer 9: Modal Edge Absorption Nodes */}
-      <circle cx={panelRight} cy={midY} r="5" fill={accentColor} filter="url(#particle-glow)" />
-      <circle cx={panelRight} cy={midY} r="10" fill="none" stroke={accentColor} strokeWidth="1.5">
-        <animate attributeName="r" values="4;14;4" dur="2s" repeatCount="indefinite" />
-        <animate attributeName="opacity" values="0.8;0.15;0.8" dur="2s" repeatCount="indefinite" />
-      </circle>
-    </svg>
-  );
-}
 
 export function EditorialDossier() {
   const isDossierOpen = useCockpitStore((s) => s.isDossierOpen);
@@ -414,26 +145,23 @@ export function EditorialDossier() {
 
   return (
     <div
-      className="editorial-stage-container fixed inset-0 z-50 flex flex-col justify-end md:justify-start pt-14 sm:pt-16 select-text overflow-hidden text-[#e2e8f0]"
+      className="editorial-stage-container fixed inset-0 z-50 flex flex-col justify-start pt-0 select-text overflow-hidden text-[#e2e8f0]"
       style={{
         '--theme-accent': accentColor,
         '--theme-secondary': secondaryColor,
         '--theme-glow': `${accentColor}33`,
       }}
     >
-      {/* ── Volumetric Aurora Hologram Field to 3D Orb ───────────── */}
-      <VolumetricAuroraField accentColor={accentColor} secondaryColor={secondaryColor} panelRef={panelRef} />
-
-      {/* ── Split Spatial Stage Panel (Left 68vw on Desktop, 100vw on Mobile) ── */}
+      {/* ── Split Spatial Stage Panel (Full Height 100vh on Left) ── */}
       <div
         ref={panelRef}
-        className="editorial-stage-panel relative flex flex-col w-full md:w-[68vw] md:max-w-5xl h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)] md:rounded-r-3xl overflow-hidden shadow-2xl"
+        className="editorial-stage-panel relative flex flex-col w-full md:w-[68vw] md:max-w-5xl h-screen md:rounded-r-3xl overflow-visible shadow-2xl"
       >
-        {/* ── Holographic Energy Absorption Spine ── */}
-        <div className="aurora-absorption-spine" />
+        {/* ── Luminous Quantum Electric Plasma Arc Spine ── */}
+        <QuantumPlasmaSpine accentColor={accentColor} secondaryColor={secondaryColor} />
 
         {/* ── Sub-Header Bar (Index + Tab Switcher + Close Button) ──────── */}
-        <div className="flex-shrink-0 border-b border-white/10 bg-black/50 px-5 sm:px-10 py-3 flex items-center justify-between gap-4">
+        <div className="flex-shrink-0 border-b border-white/10 bg-black/50 pl-24 sm:pl-32 pr-5 sm:pr-8 py-3.5 flex items-center justify-between gap-4">
           {/* Left: Section Subtitle with Dynamic Reactor Glow */}
           <div className="flex items-center gap-3">
             <span

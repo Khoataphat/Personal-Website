@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: '/Personal-Website/',
   server: {
+    host: true,
     port: 5180,
     open: false
   },

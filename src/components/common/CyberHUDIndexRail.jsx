@@ -6,8 +6,8 @@ import { Compass, Sparkles, X, ChevronRight } from 'lucide-react';
 export const NAV_SECTIONS = [
   { id: 0, num: '01', label: 'ABOUT', sub: 'EXECUTIVE PROFILE', color: '#00f2fe' },
   { id: 1, num: '02', label: 'SKILLS', sub: 'TECHNICAL ARSENAL', color: '#00ff88' },
-  { id: 2, num: '03', label: 'WORK', sub: 'MISSION ARCHIVES', color: '#f59e0b' },
-  { id: 3, num: '04', label: 'BLOG', sub: 'TRANSMISSIONS', color: '#c084fc' },
+  { id: 2, num: '03', label: 'WORK', sub: 'MISSION ARCHIVES', color: '#a855f7' },
+  { id: 3, num: '04', label: 'BLOG', sub: 'TRANSMISSIONS', color: '#f59e0b' },
   { id: 4, num: '05', label: 'CONTACT', sub: 'SECURE COMMS', color: '#f43f5e' },
 ];
 

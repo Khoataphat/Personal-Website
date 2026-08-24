@@ -1545,6 +1545,7 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
       const screenX = (proj.x * 0.5 + 0.5) * window.innerWidth;
       const screenY = (-proj.y * 0.5 + 0.5) * window.innerHeight;
       useCockpitStore.getState().setOrbScreenPos({ x: screenX, y: screenY });
+      useCockpitStore.getState().setOrbWorldPos({ x: worldPos.x, y: worldPos.y, z: worldPos.z });
 
       // Scale the singularity core sphere proportionally relative to its native GLB scale
       if (mazeNode.userData && mazeNode.userData.initialScale) {

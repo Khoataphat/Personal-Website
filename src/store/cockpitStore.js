@@ -66,23 +66,29 @@ export const useCockpitStore = create((set) => ({
   isDossierOpen: false,
   activeDossierTab: 0, // 0=About, 1=Skills, 2=Work, 3=Blog, 4=Contact
   activeThemeAccent: '#00f2fe',
+  activeThemeSecondary: '#818cf8',
   orbScreenPos: { x: 0, y: 0 },
   setOrbScreenPos: (pos) => set({ orbScreenPos: pos }),
+  orbWorldPos: { x: 0.0, y: -0.28, z: 0.42 },
+  setOrbWorldPos: (pos) => set({ orbWorldPos: pos }),
   openDossier: (tabIndex = 0) => set({
     isDossierOpen: true,
     activeDossierTab: tabIndex,
     activeCard: tabIndex,
     activeThemeAccent: SECTION_THEMES[tabIndex]?.accent || '#00f2fe',
+    activeThemeSecondary: SECTION_THEMES[tabIndex]?.secondary || '#818cf8',
     isCardExpanded: false,
   }),
   closeDossier: () => set({
     isDossierOpen: false,
     activeThemeAccent: '#00f2fe',
+    activeThemeSecondary: '#818cf8',
   }),
   switchDossierTab: (tabIndex) => set({
     activeDossierTab: tabIndex,
     activeCard: tabIndex,
     activeThemeAccent: SECTION_THEMES[tabIndex]?.accent || '#00f2fe',
+    activeThemeSecondary: SECTION_THEMES[tabIndex]?.secondary || '#818cf8',
   }),
 }));
 
