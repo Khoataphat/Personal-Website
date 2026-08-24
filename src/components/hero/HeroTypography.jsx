@@ -149,7 +149,7 @@ export function HeroBackgroundTypography() {
       <div
         className="marquee-edge-fade w-screen flex flex-col items-center justify-center gap-3 md:gap-5 overflow-hidden"
         style={{
-          transform: 'translateY(28%)',
+          transform: 'translateY(36%)',
           fontFamily: "'Outfit', 'Orbitron', sans-serif",
         }}
       >

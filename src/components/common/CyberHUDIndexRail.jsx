@@ -69,9 +69,9 @@ export function CyberHUDIndexRail() {
       {/* ── 1. DESKTOP CYBER-HUD INDEX RAIL (>= 768px md:flex) ────────── */}
       <nav
         aria-label="Main Navigation Index"
-        className="hidden md:flex fixed right-4 lg:right-7 z-[60] pointer-events-auto select-none flex-col items-end gap-3.5"
+        className="hidden md:flex fixed right-4 lg:right-7 z-[60] pointer-events-auto select-none flex-col items-end gap-3"
         style={{
-          top: 'clamp(90px, 22vh, 200px)',
+          top: 'clamp(120px, 24vh, 215px)',
           fontFamily: "'Fira Code', monospace",
           zIndex: 60,
           opacity: mounted ? 1 : 0,

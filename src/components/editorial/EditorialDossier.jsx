@@ -179,7 +179,8 @@ export function EditorialDossier() {
               soundFx.playClose?.();
               closeDossier();
             }}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/15 text-zinc-300 font-mono text-xs tracking-wider transition-all"
+            aria-label="Close Dossier"
+            className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/15 text-zinc-300 font-mono text-xs transition-all hover:scale-105 active:scale-95"
             onMouseOver={(e) => {
               e.currentTarget.style.borderColor = accentColor;
               e.currentTarget.style.color = accentColor;
@@ -188,10 +189,9 @@ export function EditorialDossier() {
               e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
               e.currentTarget.style.color = '#d4d4d8';
             }}
+            title="Close [ESC]"
           >
-            <X className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">[ESC] RETURN TO COSMOS</span>
-            <span className="sm:hidden">[ESC]</span>
+            <X className="w-4 h-4" />
           </button>
         </div>
 

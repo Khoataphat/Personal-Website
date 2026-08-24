@@ -39,11 +39,15 @@ export function HeroTopNav() {
       {/* ── 1. Top-Left Floating Neon Signature Brand ───────────────── */}
       <aside
         aria-label="System Identity"
-        className="fixed z-[60] pointer-events-auto select-none"
+        className="fixed z-[60] select-none"
         style={{
           top: 'clamp(18px, 2.8vh, 32px)',
           left: 'clamp(24px, 3.5vw, 48px)',
           zIndex: 60,
+          opacity: isDossierOpen ? 0 : 1,
+          pointerEvents: isDossierOpen ? 'none' : 'auto',
+          visibility: isDossierOpen ? 'hidden' : 'visible',
+          transition: 'opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s',
         }}
       >
         <button
