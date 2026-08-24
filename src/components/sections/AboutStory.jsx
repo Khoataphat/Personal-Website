@@ -166,7 +166,7 @@ export default function AboutStory() {
       {/* ========================================================================= */}
       {/* DESKTOP VIEW (>= 768px): Pinned Horizontal Scrollytelling                  */}
       {/* ========================================================================= */}
-      <div className="hidden md:block relative h-screen w-full overflow-hidden">
+      <div className="hidden md:block relative h-[100dvh] w-full overflow-hidden">
         {/* Top Floating HUD Bar */}
         <div className="absolute top-6 left-0 right-0 z-30 px-8 max-w-7xl mx-auto flex items-center justify-between pointer-events-auto">
           {/* Chapter Title Badge */}

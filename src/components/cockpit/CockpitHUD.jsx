@@ -155,15 +155,14 @@ export function CockpitHUD() {
           {/* Audio Mute Toggle */}
           <button
             onClick={handleMuteClick}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] tracking-wider border transition-all ${
+            className={`flex items-center justify-center p-1.5 rounded text-[10px] tracking-wider border transition-all ${
               !isAudioMuted
                 ? 'bg-[#00f2fe]/10 border-[#00f2fe]/40 text-[#00f2fe]'
                 : 'bg-white/5 border-white/10 text-zinc-500'
             }`}
-            title="Toggle Audio Feedback"
+            title={!isAudioMuted ? "Audio Feedback: ON (Click to Mute)" : "Audio Feedback: MUTED (Click to Unmute)"}
           >
             {!isAudioMuted ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{!isAudioMuted ? 'AUDIO ON' : 'MUTED'}</span>
           </button>
 
           {/* Display Mode Toggle */}

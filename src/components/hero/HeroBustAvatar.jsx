@@ -189,7 +189,7 @@ function createCyberCardTexture(item) {
   ctx.shadowColor = item.accent;
   ctx.shadowBlur = 14;
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 36px "Share Tech Mono", "Courier New", monospace';
+  ctx.font = 'bold 36px "Fira Code", monospace';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.letterSpacing = '3.5px';

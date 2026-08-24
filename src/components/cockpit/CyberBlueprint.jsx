@@ -176,7 +176,7 @@ export function CyberBlueprint({ projectId }) {
                   fill={isSelected ? '#ffffff' : '#cbd5e1'}
                   fontSize="9.5"
                   fontWeight={isSelected ? 'bold' : 'normal'}
-                  fontFamily="monospace"
+                  fontFamily="'Fira Code', monospace"
                   letterSpacing="0.02em"
                   className="pointer-events-none"
                 >

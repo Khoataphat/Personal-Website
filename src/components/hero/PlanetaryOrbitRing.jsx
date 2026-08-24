@@ -77,7 +77,7 @@ export function PlanetaryOrbitRing({ radius = 0.28, tilt = THREE.MathUtils.degTo
                     borderRadius: '9999px',
                     boxShadow: `0 0 10px ${item.accent}33, inset 0 0 4px ${item.accent}22`,
                     whiteSpace: 'nowrap',
-                    fontFamily: "'Share Tech Mono', 'Courier New', monospace",
+                    fontFamily: "'Fira Code', monospace",
                   }}
                 >
                   <span

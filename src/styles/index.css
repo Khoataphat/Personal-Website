@@ -17,14 +17,22 @@
     color: var(--text-main);
     -webkit-text-size-adjust: 100%;
     overscroll-behavior-y: none;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: 100dvh;
   }
 
   body {
     background-color: var(--bg-color);
     overflow-x: hidden;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: 100dvh;
+    width: 100%;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    cursor: default;
   }
 
   /* Custom Smooth Scrollbar */
@@ -48,9 +56,10 @@
     box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
   }
 
-  /* Mobile Touch Target Optimization */
-  button, a {
+  /* Interactive Elements Pointer & Touch Target Optimization */
+  button, a, [role="button"], input[type="button"], input[type="submit"] {
     touch-action: manipulation;
+    cursor: pointer;
   }
 }
 

@@ -67,15 +67,15 @@ export function CyberHUDIndexRail() {
     <>
       {/* ════════════════════════════════════════════════════════════════ */}
       {/* ── 1. DESKTOP CYBER-HUD INDEX RAIL (>= 768px md:flex) ────────── */}
-      {/* ════════════════════════════════════════════════════════════════ */}
       <nav
         aria-label="Main Navigation Index"
-        className="hidden md:flex fixed right-4 lg:right-7 top-1/2 -translate-y-1/2 z-[60] pointer-events-auto select-none flex-col items-end gap-3.5"
+        className="hidden md:flex fixed right-4 lg:right-7 z-[60] pointer-events-auto select-none flex-col items-end gap-3.5"
         style={{
-          fontFamily: "'Share Tech Mono', 'Courier New', monospace",
+          top: 'clamp(90px, 22vh, 200px)',
+          fontFamily: "'Fira Code', monospace",
           zIndex: 60,
           opacity: mounted ? 1 : 0,
-          transform: mounted ? 'translateY(-50%)' : 'translateY(-45%)',
+          transform: mounted ? 'translateY(0)' : 'translateY(-12px)',
           transition: 'opacity 0.8s ease 0.3s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s',
         }}
       >
@@ -130,9 +130,9 @@ export function CyberHUDIndexRail() {
             >
               {/* Magnetic Expansion Pill (Expanded text label on Hover or Active) */}
               <div
-                className="flex items-center gap-2 overflow-hidden transition-all duration-300"
+                className="flex items-center overflow-hidden transition-all duration-300"
                 style={{
-                  maxWidth: isHovered ? '200px' : isActive ? '130px' : '0px',
+                  maxWidth: (isHovered || isActive) ? '130px' : '0px',
                   opacity: (isHovered || isActive) ? 1 : 0,
                   transform: (isHovered || isActive) ? 'translateX(0)' : 'translateX(10px)',
                 }}
@@ -150,15 +150,6 @@ export function CyberHUDIndexRail() {
                 >
                   {item.label}
                 </span>
-
-                {isHovered && (
-                  <span
-                    className="text-[8.5px] px-1.5 py-0.5 rounded tracking-widest text-zinc-400 bg-white/5 border border-white/10 hidden xl:inline-block"
-                    style={{ whiteSpace: 'nowrap' }}
-                  >
-                    {isActive ? '[ACTIVE - ESC]' : `[0${item.id + 1}]`}
-                  </span>
-                )}
               </div>
 
               {/* Number Badge */}
@@ -170,7 +161,7 @@ export function CyberHUDIndexRail() {
                   color: isActive ? itemColor : isHovered ? '#ffffff' : 'rgba(255, 255, 255, 0.45)',
                   textShadow: isActive ? `0 0 12px ${itemColor}` : isHovered ? `0 0 8px ${itemColor}88` : 'none',
                   transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-                  fontFamily: "'Fira Code', 'Courier New', monospace",
+                  fontFamily: "'Fira Code', monospace",
                 }}
               >
                 {item.num}
@@ -223,7 +214,7 @@ export function CyberHUDIndexRail() {
         {isMobileDialOpen && (
           <div
             className="absolute bottom-16 right-0 z-60 flex flex-col items-end gap-2.5 mb-2 animate-slideUp"
-            style={{ fontFamily: "'Share Tech Mono', monospace" }}
+            style={{ fontFamily: "'Fira Code', monospace" }}
           >
             {NAV_SECTIONS.map((item, idx) => {
               const isActive = isDossierOpen && activeDossierTab === item.id;

@@ -71,7 +71,7 @@ export function ExpandedDetailModal() {
         onClick={(e) => e.stopPropagation()} // prevent backdrop close inside panel
         style={{
           width: 'min(92vw, 780px)',
-          maxHeight: '85vh',
+          maxHeight: '85dvh',
           background: 'rgba(8, 8, 18, 0.95)',
           border: `1.5px solid ${meta.accent}55`,
           borderRadius: '16px',
@@ -101,7 +101,7 @@ export function ExpandedDetailModal() {
               {meta.icon}
             </span>
             <span style={{
-              fontFamily: "'Share Tech Mono', 'Courier New', monospace",
+              fontFamily: "'Fira Code', monospace",
               fontSize: '13px',
               fontWeight: 'bold',
               letterSpacing: '3px',
@@ -111,7 +111,7 @@ export function ExpandedDetailModal() {
               {meta.label}
             </span>
             <span style={{
-              fontFamily: 'monospace',
+              fontFamily: "'Fira Code', monospace",
               fontSize: '10px',
               color: 'rgba(255,255,255,0.3)',
               letterSpacing: '1px',
@@ -129,7 +129,7 @@ export function ExpandedDetailModal() {
               color: 'rgba(255,255,255,0.7)',
               padding: '5px 12px',
               cursor: 'pointer',
-              fontFamily: 'monospace',
+              fontFamily: "'Fira Code', monospace",
               fontSize: '11px',
               letterSpacing: '1px',
               transition: 'all 0.2s',

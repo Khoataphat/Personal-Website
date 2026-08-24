@@ -317,7 +317,7 @@ export function HeroCosmicScene() {
 
   return (
     <div
-      className="fixed inset-0 w-screen h-screen overflow-hidden bg-transparent z-10"
+      className="fixed inset-0 w-screen h-[100dvh] overflow-hidden bg-transparent z-10"
       onPointerMove={handlePointerMove}
       onPointerLeave={setMouseInactive}
     >

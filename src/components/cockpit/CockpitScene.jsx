@@ -148,7 +148,7 @@ export function CockpitScene({ children }) {
 
   return (
     <div
-      className="fixed inset-0 w-screen h-screen overflow-hidden bg-[#070709] z-0 select-none"
+      className="fixed inset-0 w-screen h-[100dvh] overflow-hidden bg-[#070709] z-0 select-none"
       onPointerMove={handlePointerMove}
     >
       <Canvas

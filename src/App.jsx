@@ -9,7 +9,6 @@ import { ExpandedDetailModal } from './components/hero/ExpandedDetailModal';
 import { ProjectDeepDiveModal } from './components/cockpit/ProjectDeepDiveModal';
 import BlogModal from './components/common/BlogModal';
 import PdfViewerModal from './components/common/PdfViewerModal';
-import CustomCursor from './components/common/CustomCursor';
 
 export default function App() {
   const activeBlogModal = useCockpitStore((s) => s.activeBlogModal);
@@ -18,9 +17,7 @@ export default function App() {
   const closePdfModal = useCockpitStore((s) => s.closePdfModal);
 
   return (
-    <div className="relative w-screen h-screen bg-[#070709] text-text-main overflow-hidden select-none">
-      {/* Custom Cyber Cursor */}
-      <CustomCursor />
+    <div className="relative w-screen h-[100dvh] min-h-[100dvh] bg-[#070709] text-text-main overflow-hidden select-none">
 
       {/* ── 1. Background Typography (Layer 1: z-0 behind 3D Canvas) ── */}
       <HeroBackgroundTypography />

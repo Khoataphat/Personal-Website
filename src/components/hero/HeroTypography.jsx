@@ -1,5 +1,36 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useCockpitStore } from '../../store/cockpitStore';
+import { profileData } from '../../data/profile';
+import { soundFx } from '../../services/soundFx';
+
+// SVG Icon components for social links
+const GithubIcon = ({ size = 13, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+    <path d="M9 18c-4.51 2-5-2-7-2" />
+  </svg>
+);
+
+const LinkedinIcon = ({ size = 13, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+    <rect width="4" height="12" x="2" y="9" />
+    <circle cx="4" cy="4" r="2" />
+  </svg>
+);
+
+const FacebookIcon = ({ size = 13, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+  </svg>
+);
+
+const MailIcon = ({ size = 13, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <rect width="20" height="16" x="2" y="4" rx="2" />
+    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+  </svg>
+);
 
 // Clean cyber alphanumeric characters guaranteed to render perfectly in Outfit & Orbitron
 const CYBER_GLYPHS = '0123456789ABCDEFXYZ0101';
@@ -76,12 +107,10 @@ function useScrambledText(targetText, triggerId, duration = 650) {
 // Minimalist Kinetic Marquee Content
 const MARQUEE_ROW_1_ITEMS = [
   'DANG KHOA',
-  'DIGITAL ARCHITECT',
 ];
 
 const MARQUEE_ROW_2_ITEMS = [
   'SOFTWARE ENGINEER',
-  'IOT ARCHITECTURE',
 ];
 
 /**
@@ -89,10 +118,9 @@ const MARQUEE_ROW_2_ITEMS = [
  *
  * Ambient Kinetic Chrome Marquee Typography Portal:
  *   - Rendered at z-0 BEHIND the 3D Canvas layer (z-10).
- *   - Row 1 (Upper neck/head level): Infinite ambient ticker gliding slowly to the LEFT (←←←).
- *   - Row 2 (Lower shoulder level): Infinite ambient ticker gliding slowly to the RIGHT (→→→).
+ *   - Row 1: Infinite ambient ticker gliding slowly to the LEFT (←←←) displaying "DANG KHOA".
+ *   - Row 2: Infinite ambient ticker gliding slowly to the RIGHT (→→→) displaying "SOFTWARE ENGINEER".
  *   - Metallic Chrome & Frosted Glass gradient styling (Ice Cyan & Lavender Violet).
- *   - Minimalist text density with expansive breathing spacing (mx-12 md:mx-20).
  *   - Subtle ambient opacity (0.50) letting the 3D Avatar command 100% foreground focus.
  *   - 100% GPU accelerated, 60 FPS silky smooth continuous flow.
  */
@@ -105,24 +133,9 @@ export function HeroBackgroundTypography() {
     return () => clearTimeout(t);
   }, []);
 
-  // Repeat sequence 6 times to ensure seamless infinite looping on any screen resolution (including 4K)
-  const row1Repeated = useMemo(() => [
-    ...MARQUEE_ROW_1_ITEMS,
-    ...MARQUEE_ROW_1_ITEMS,
-    ...MARQUEE_ROW_1_ITEMS,
-    ...MARQUEE_ROW_1_ITEMS,
-    ...MARQUEE_ROW_1_ITEMS,
-    ...MARQUEE_ROW_1_ITEMS,
-  ], []);
-
-  const row2Repeated = useMemo(() => [
-    ...MARQUEE_ROW_2_ITEMS,
-    ...MARQUEE_ROW_2_ITEMS,
-    ...MARQUEE_ROW_2_ITEMS,
-    ...MARQUEE_ROW_2_ITEMS,
-    ...MARQUEE_ROW_2_ITEMS,
-    ...MARQUEE_ROW_2_ITEMS,
-  ], []);
+  // Repeat sequence 12 times to ensure seamless infinite looping on any screen resolution (including 4K)
+  const row1Repeated = useMemo(() => Array(12).fill('DANG KHOA'), []);
+  const row2Repeated = useMemo(() => Array(12).fill('SOFTWARE ENGINEER'), []);
 
   return (
     <div
@@ -136,7 +149,7 @@ export function HeroBackgroundTypography() {
       <div
         className="marquee-edge-fade w-screen flex flex-col items-center justify-center gap-3 md:gap-5 overflow-hidden"
         style={{
-          transform: 'translateY(-6%)',
+          transform: 'translateY(28%)',
           fontFamily: "'Outfit', 'Orbitron', sans-serif",
         }}
       >
@@ -218,99 +231,139 @@ export function HeroForegroundHUD() {
         transition: 'opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
     >
-      {/* Left Subtitle & Bio Badge */}
+      {/* Bottom-Left Minimalist Creator HUD Tag */}
       <div
         style={{
           position: 'absolute',
-          left: '4%',
-          bottom: '10%',
-          maxWidth: '420px',
+          left: 'clamp(24px, 3.5vw, 48px)',
+          bottom: 'clamp(20px, 3vh, 36px)',
           opacity: mounted ? 1 : 0,
-          transform: mounted ? 'translateY(0)' : 'translateY(15px)',
-          transition: 'opacity 0.9s ease 0.2s, transform 0.9s ease 0.2s',
+          transform: mounted ? 'translateY(0)' : 'translateY(12px)',
+          transition: 'opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.3s, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.3s',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          gap: '5px',
         }}
       >
         <div
           style={{
             fontSize: '10px',
-            letterSpacing: '3px',
-            color: '#00f2fe',
-            marginBottom: '8px',
             fontWeight: 600,
-            textShadow: '0 0 10px rgba(0,242,254,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
+            letterSpacing: '2.5px',
+            color: '#00f2fe',
+            textShadow: '0 0 12px rgba(0, 242, 254, 0.55)',
+            textTransform: 'uppercase',
           }}
         >
-          <span
-            style={{
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              background: '#00f2fe',
-              display: 'inline-block',
-              boxShadow: '0 0 8px #00f2fe',
-            }}
-          />
-          <span>OPERATOR // DANG KHOA</span>
+          <span>CREATED BY ĐĂNG KHOA</span>
         </div>
-
-        <p
-          style={{
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            fontSize: '12px',
-            letterSpacing: '0.04em',
-            color: 'rgba(255,255,255,0.7)',
-            margin: 0,
-            marginBottom: '14px',
-            lineHeight: 1.6,
-            fontWeight: 400,
-          }}
-        >
-          EXPLORE BEYOND THE MASK OF COGNITION · FULL-STACK & IOT CREATIVE DEV
-        </p>
 
         <div
           style={{
-            width: '70px',
-            height: '2px',
-            background: 'linear-gradient(90deg, #00f2fe, #7928ca)',
-            borderRadius: '2px',
-            boxShadow: '0 0 10px rgba(0,242,254,0.6)',
+            width: '45px',
+            height: '1.5px',
+            background: 'linear-gradient(90deg, #00f2fe, #7928ca, transparent)',
+            borderRadius: '1px',
+            boxShadow: '0 0 8px rgba(0, 242, 254, 0.4)',
           }}
         />
       </div>
 
-      {/* Bottom Orbit Indicator */}
+      {/* Bottom-Right Social Hub & Version HUD */}
       <div
+        className="pointer-events-auto"
         style={{
           position: 'absolute',
-          bottom: '2.5%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          fontSize: '9px',
-          letterSpacing: '3px',
-          color: 'rgba(255,255,255,0.3)',
+          right: 'clamp(24px, 3.5vw, 48px)',
+          bottom: 'clamp(20px, 3vh, 36px)',
           opacity: mounted ? 1 : 0,
-          transition: 'opacity 1.2s ease 0.6s',
-          textAlign: 'center',
+          transform: mounted ? 'translateY(0)' : 'translateY(12px)',
+          transition: 'opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.35s, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.35s',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          gap: '6px',
+          alignItems: 'flex-end',
+          gap: '5px',
         }}
       >
         <div
           style={{
-            width: '1.5px',
-            height: '18px',
-            background: 'linear-gradient(180deg, transparent, rgba(0,242,254,0.6))',
-            margin: '0 auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+          }}
+        >
+          {/* Social Links Group */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            {[
+              { id: 'github', label: 'GitHub', url: profileData.socials.github, Icon: GithubIcon },
+              { id: 'linkedin', label: 'LinkedIn', url: profileData.socials.linkedin, Icon: LinkedinIcon },
+              { id: 'facebook', label: 'Facebook', url: profileData.socials.facebook, Icon: FacebookIcon },
+              { id: 'mail', label: 'Email', url: `mailto:${profileData.email}`, Icon: MailIcon },
+            ].map(({ id, label, url, Icon }) => (
+              <a
+                key={id}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={label}
+                aria-label={label}
+                onMouseEnter={() => soundFx.playHover?.()}
+                onClick={() => soundFx.playClick?.()}
+                className="group relative flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer"
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '5px',
+                  background: 'rgba(6, 9, 20, 0.75)',
+                  border: '1px solid rgba(0, 242, 254, 0.22)',
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
+                }}
+              >
+                <Icon size={12} className="transition-colors duration-200 group-hover:text-[#00f2fe]" />
+              </a>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <span style={{ width: '1px', height: '12px', background: 'rgba(255, 255, 255, 0.15)' }} />
+
+          {/* Project Version Tag */}
+          <div
+            style={{
+              fontSize: '10px',
+              fontWeight: 600,
+              letterSpacing: '1.8px',
+              color: '#00f2fe',
+              textShadow: '0 0 10px rgba(0, 242, 254, 0.5)',
+              textTransform: 'uppercase',
+            }}
+          >
+            <span>v1.0.0</span>
+          </div>
+        </div>
+
+        {/* Right Line Indicator */}
+        <div
+          style={{
+            width: '45px',
+            height: '1.5px',
+            background: 'linear-gradient(270deg, #00f2fe, #7928ca, transparent)',
+            borderRadius: '1px',
+            boxShadow: '0 0 8px rgba(0, 242, 254, 0.4)',
           }}
         />
-        <span>PLANETARY ORBIT RING ACTIVE</span>
       </div>
+
     </div>
   );
 }

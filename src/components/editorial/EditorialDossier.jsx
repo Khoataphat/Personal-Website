@@ -155,7 +155,7 @@ export function EditorialDossier() {
       {/* ── Split Spatial Stage Panel (Full Height 100vh on Left) ── */}
       <div
         ref={panelRef}
-        className="editorial-stage-panel relative flex flex-col w-full md:w-[68vw] md:max-w-5xl h-screen md:rounded-r-3xl overflow-visible shadow-2xl"
+        className="editorial-stage-panel relative flex flex-col w-full md:w-[68vw] md:max-w-5xl h-[100dvh] md:rounded-r-3xl overflow-visible shadow-2xl"
       >
         {/* ── Luminous Quantum Electric Plasma Arc Spine ── */}
         <QuantumPlasmaSpine accentColor={accentColor} secondaryColor={secondaryColor} />

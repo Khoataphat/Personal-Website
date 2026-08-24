@@ -36,115 +36,127 @@ export function HeroTopNav() {
 
   return (
     <>
-      {/* ── 1. Top-Left Floating Glass Brand Island ─────────────────── */}
+      {/* ── 1. Top-Left Floating Neon Signature Brand ───────────────── */}
       <aside
-        aria-label="System Identity & Telemetry"
-        className="fixed top-4 left-4 sm:top-6 sm:left-8 z-[60] pointer-events-auto select-none"
-        style={{ fontFamily: "'Share Tech Mono', 'Courier New', monospace", zIndex: 60 }}
+        aria-label="System Identity"
+        className="fixed z-[60] pointer-events-auto select-none"
+        style={{
+          top: 'clamp(18px, 2.8vh, 32px)',
+          left: 'clamp(24px, 3.5vw, 48px)',
+          zIndex: 60,
+        }}
       >
         <button
           type="button"
           onClick={handleBrandClick}
-          aria-label={isDossierOpen ? "Close dossier and return to Cosmos Hero view" : "Dang Khoa Sovereign System online"}
-          className="flex items-center gap-3 px-3.5 py-2.5 sm:px-4 sm:py-2.5 rounded-xl cursor-pointer group transition-all duration-300 hover:scale-[1.02] active:scale-95 text-left border-0 focus:outline-none"
-          style={{
-            background: 'rgba(6, 7, 16, 0.72)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(0, 242, 254, 0.22)',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 242, 254, 0.1)',
-          }}
-          title={isDossierOpen ? "Click to return to Cosmos Hero [ESC]" : "Dang Khoa Sovereign Architecture"}
+          aria-label={isDossierOpen ? "Close dossier and return to Cosmos Hero view" : "Khoa Portfolio Home"}
+          className="group flex flex-col items-start cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 text-left border-0 bg-transparent p-0 focus:outline-none"
+          title={isDossierOpen ? "Return to Cosmos Hero [ESC]" : "Dang Khoa Sovereign System"}
         >
-          {/* Glowing Brand Monogram Box */}
-          <div
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:shadow-[0_0_15px_rgba(0,242,254,0.7)]"
+          {/* Fluid Neon Calligraphy Signature Wordmark */}
+          <span
+            className="inline-block transition-all duration-300 group-hover:brightness-125 select-none"
             style={{
-              background: 'linear-gradient(135deg, rgba(0,242,254,0.2) 0%, rgba(121,40,202,0.2) 100%)',
-              border: '1.5px solid #00f2fe',
-              boxShadow: '0 0 10px rgba(0, 242, 254, 0.35)',
+              fontFamily: "'Alex Brush', 'Great Vibes', cursive",
+              fontSize: 'clamp(36px, 2.8vw, 48px)',
+              lineHeight: 1.25,
+              padding: '10px 12px 2px 6px',
+              margin: '-8px -4px -4px -4px',
+              background: 'linear-gradient(135deg, #ffffff 15%, #00f2fe 65%, #c084fc 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 0 12px rgba(0, 242, 254, 0.7)) drop-shadow(0 0 24px rgba(121, 40, 202, 0.45))',
+              letterSpacing: '1px',
+              overflow: 'visible',
             }}
           >
-            <span
-              style={{
-                color: '#00f2fe',
-                fontSize: '13px',
-                fontWeight: 900,
-                fontFamily: "'Outfit', sans-serif",
-                lineHeight: 1,
-                textShadow: '0 0 8px rgba(0,242,254,0.8)',
-              }}
-            >
-              K
-            </span>
-          </div>
+            Khoa
+          </span>
 
-          {/* Brand Name & Live Telemetry */}
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span
-                style={{
-                  fontSize: '13px',
-                  fontWeight: 800,
-                  letterSpacing: '3px',
-                  color: '#ffffff',
-                  fontFamily: "'Outfit', 'Orbitron', sans-serif",
-                  textShadow: '0 0 10px rgba(0,242,254,0.4)',
-                }}
-              >
-                KHOA
-              </span>
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#00f2fe] animate-pulse" />
-            </div>
-
-            <div
-              className="flex items-center gap-1.5"
-              style={{
-                fontSize: '8.5px',
-                letterSpacing: '1.5px',
-                color: isDossierOpen ? '#00ff88' : '#00f2fe',
-                opacity: 0.85,
-              }}
-            >
-              {telemetry.fps > 0 && <span className="text-zinc-400">FPS {telemetry.fps} ·</span>}
-              <span>{isDossierOpen ? 'EDITORIAL ACTIVE' : (telemetry.utcClock || 'SYSTEM ONLINE')}</span>
-            </div>
-          </div>
+          {/* Artistic Calligraphy Brush Flourish (Loop at start, thick belly, soaring upward ascent) */}
+          <svg
+            width="96"
+            height="22"
+            viewBox="0 0 96 22"
+            fill="none"
+            className="overflow-visible transition-all duration-500 group-hover:scale-105"
+            style={{ marginTop: '-8px', marginLeft: '4px' }}
+          >
+            <defs>
+              <linearGradient id="sigCalligraphyGrad" x1="0%" y1="50%" x2="100%" y2="50%">
+                <stop offset="0%" stopColor="#00f2fe" stopOpacity="0.75" />
+                <stop offset="30%" stopColor="#00f2fe" stopOpacity="1" />
+                <stop offset="65%" stopColor="#9d4edd" stopOpacity="1" />
+                <stop offset="90%" stopColor="#00f2fe" stopOpacity="0.95" />
+                <stop offset="100%" stopColor="#ffffff" stopOpacity="1" />
+              </linearGradient>
+              <filter id="sigCalligraphyGlow" x="-30%" y="-50%" width="160%" height="200%">
+                <feGaussianBlur stdDeviation="1.5" result="glow" />
+                <feMerge>
+                  <feMergeNode in="glow" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            {/* Calligraphy stroke with variable thickness (thin loop -> thick middle belly -> fine rising tip) */}
+            <path
+              d="M 10,13.5
+                 C 6,15.5 2,16 1.5,12
+                 C 1,7.5 6,5 10,7.5
+                 C 14.5,10.5 16,15 22,16.5
+                 C 34,18.5 50,17.5 66,12
+                 C 76,8.5 85,4 92,1.2
+                 C 92.8,0.9 91.5,2.4 89,3.8
+                 C 79,9.8 69,14 56,17.2
+                 C 41,20.5 26,19 17.5,14.8
+                 C 13,12 9.5,9 7,9.5
+                 C 4.5,10 3.8,12.5 5.5,14
+                 C 7.5,15.5 9.5,14.5 10,13.5 Z"
+              fill="url(#sigCalligraphyGrad)"
+              filter="url(#sigCalligraphyGlow)"
+            />
+            {/* Micro accent starlight at soaring apex */}
+            <circle
+              cx="92.5"
+              cy="1.2"
+              r="1.2"
+              fill="#ffffff"
+              style={{ filter: 'drop-shadow(0 0 5px #00f2fe)' }}
+            />
+          </svg>
         </button>
       </aside>
 
-      {/* ── 2. Top-Right Floating Audio Pill ────────────────────────── */}
+      {/* ── 2. Top-Right Floating Audio Toggle Button ────────────────── */}
       <div
-        className="fixed top-4 right-4 sm:top-6 sm:right-8 z-[60] pointer-events-auto select-none"
-        style={{ fontFamily: "'Share Tech Mono', 'Courier New', monospace", zIndex: 60 }}
+        className="fixed z-[60] pointer-events-auto select-none"
+        style={{
+          top: 'clamp(20px, 3vh, 36px)',
+          right: 'clamp(24px, 3.5vw, 48px)',
+          fontFamily: "'Fira Code', monospace",
+          zIndex: 60,
+        }}
       >
         <button
           onClick={handleMuteClick}
-          className="flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 group"
+          aria-label={!isAudioMuted ? "Mute interactive audio" : "Enable audio"}
+          className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 group"
           style={{
-            background: !isAudioMuted ? 'rgba(0, 242, 254, 0.08)' : 'rgba(6, 7, 16, 0.72)',
+            background: !isAudioMuted ? 'rgba(0, 242, 254, 0.1)' : 'rgba(6, 7, 16, 0.72)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            border: `1px solid ${!isAudioMuted ? 'rgba(0, 242, 254, 0.4)' : 'rgba(255, 255, 255, 0.12)'}`,
+            border: `1px solid ${!isAudioMuted ? 'rgba(0, 242, 254, 0.45)' : 'rgba(255, 255, 255, 0.14)'}`,
             boxShadow: !isAudioMuted
-              ? '0 4px 20px rgba(0, 242, 254, 0.2), 0 0 10px rgba(0, 242, 254, 0.1)'
-              : '0 4px 20px rgba(0, 0, 0, 0.5)',
-            color: !isAudioMuted ? '#00f2fe' : 'rgba(255, 255, 255, 0.4)',
+              ? '0 4px 20px rgba(0, 242, 254, 0.25), 0 0 12px rgba(0, 242, 254, 0.2)'
+              : '0 4px 16px rgba(0, 0, 0, 0.6)',
+            color: !isAudioMuted ? '#00f2fe' : 'rgba(255, 255, 255, 0.45)',
           }}
-          title={!isAudioMuted ? "Mute interactive audio" : "Enable sci-fi sound FX"}
+          title={!isAudioMuted ? "Audio Feedback: ON (Click to Mute)" : "Audio Feedback: MUTED (Click to Unmute)"}
         >
           {!isAudioMuted ? (
-            <>
-              <Volume2 className="w-3.5 h-3.5 text-[#00f2fe] animate-pulse" />
-              <span className="text-[10px] tracking-widest font-bold hidden sm:inline">AUDIO ON</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00f2fe] shadow-[0_0_6px_#00f2fe]" />
-            </>
+            <Volume2 className="w-4 h-4 text-[#00f2fe] transition-transform duration-200 group-hover:scale-110" />
           ) : (
-            <>
-              <VolumeX className="w-3.5 h-3.5 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
-              <span className="text-[10px] tracking-widest font-medium text-zinc-400 hidden sm:inline">MUTED</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
-            </>
+            <VolumeX className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
           )}
         </button>
       </div>

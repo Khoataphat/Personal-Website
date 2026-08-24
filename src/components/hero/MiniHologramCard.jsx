@@ -72,7 +72,7 @@ export function MiniHologramCard({ index, position, accentColor }) {
             padding: '10px 10px 8px',
             cursor: 'pointer',
             userSelect: 'none',
-            fontFamily: "'Share Tech Mono', 'Courier New', monospace",
+            fontFamily: "'Fira Code', monospace",
             boxShadow: isActive
               ? `0 0 22px ${accent}88, 0 0 6px ${accent}44 inset`
               : `0 0 8px ${accent}33`,
