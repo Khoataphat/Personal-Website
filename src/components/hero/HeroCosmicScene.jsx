@@ -7,6 +7,7 @@ import { useCockpitStore } from '../../store/cockpitStore';
 import { CosmicGalaxyBackdrop } from './CosmicGalaxyBackdrop';
 import { HeroBustAvatar } from './HeroBustAvatar';
 import { QuantumPhotonStream3D } from './QuantumPhotonStream3D';
+import { cutsceneDirector } from '../../services/cutscene';
 
 /**
  * Telemetry tracker (FPS, UTC clock)
@@ -199,17 +200,40 @@ function HeroCameraRig() {
     }
 
     const isDossierOpen = useCockpitStore.getState().isDossierOpen;
+    const heroTransition = useCockpitStore.getState().heroTransition;
     const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
 
-    // Smoothly adapt target spherical values based on Split Stage vs Sovereign Hero
+    // Smoothly adapt target spherical values based on Split Stage vs Sovereign Hero vs Cutscene
     let targetRadius = DEFAULT_SPHERICAL.radius;
     let targetPhi = DEFAULT_SPHERICAL.phi;
     let targetTheta = DEFAULT_SPHERICAL.theta;
     let targetX = 0;
     let targetY = 0.05;
     let targetShiftX = 0;
+    let shakeOffset = { x: 0, y: 0, z: 0 };
+    let cameraSpeedFactor = 3.5;
 
-    if (isDossierOpen) {
+    const cutsceneState = cutsceneDirector.getCurrentState();
+
+    if (cutsceneDirector.active && cutsceneState?.camera) {
+      const cam = cutsceneState.camera;
+      targetRadius = cam.radius;
+      targetPhi = cam.phi;
+      targetTheta = cam.theta;
+      targetY = cam.targetY;
+      targetShiftX = cam.targetShiftX ?? 0;
+      shakeOffset = cam.shakeOffset || { x: 0, y: 0, z: 0 };
+      cameraSpeedFactor = cam.speedFactor || 5.5;
+
+      if (cam.fov && Math.abs(camera.fov - cam.fov) > 0.01) {
+        camera.fov = cam.fov;
+        camera.updateProjectionMatrix();
+      }
+    } else if (isDossierOpen) {
+      if (camera.fov !== 45) {
+        camera.fov = 45;
+        camera.updateProjectionMatrix();
+      }
       if (isDesktop) {
         // True Frontal Square View (Z-axis 100% perpendicular to chest) + Asymmetric Camera Frustum Shift
         targetRadius = 2.05;
@@ -228,12 +252,15 @@ function HeroCameraRig() {
         targetY = 0.18;
         targetShiftX = 0;
       }
+    } else if (camera.fov !== 45) {
+      camera.fov = 45;
+      camera.updateProjectionMatrix();
     }
 
     if (!ENABLE_KEYBOARD_CONTROLS && !isDraggingRef.current) {
-      s.radius += (targetRadius - s.radius) * Math.min(1, delta * 3.5);
-      s.phi += (targetPhi - s.phi) * Math.min(1, delta * 3.5);
-      s.theta += (targetTheta - s.theta) * Math.min(1, delta * 3.5);
+      s.radius += (targetRadius - s.radius) * Math.min(1, delta * cameraSpeedFactor);
+      s.phi += (targetPhi - s.phi) * Math.min(1, delta * cameraSpeedFactor);
+      s.theta += (targetTheta - s.theta) * Math.min(1, delta * cameraSpeedFactor);
     }
 
     // Smooth Asymmetric Frustum Shift
@@ -264,13 +291,13 @@ function HeroCameraRig() {
     const sinTheta = Math.sin(s.theta);
     const cosTheta = Math.cos(s.theta);
 
-    // Fixed Sovereign Framing (zero camera mouse drift)
-    const destX = targetX + s.radius * sinPhi * sinTheta;
-    const destY = targetY + s.radius * cosPhi;
-    const destZ = targetZ + s.radius * sinPhi * cosTheta;
+    // Fixed Sovereign Framing (zero camera mouse drift) + Dynamic Impact Shake
+    const destX = targetX + s.radius * sinPhi * sinTheta + shakeOffset.x;
+    const destY = targetY + s.radius * cosPhi + shakeOffset.y;
+    const destZ = targetZ + s.radius * sinPhi * cosTheta + shakeOffset.z;
 
     // Smooth camera transition
-    const lerpFactor = Math.min(1, delta * 8);
+    const lerpFactor = Math.min(1, delta * 9);
     camera.position.x += (destX - camera.position.x) * lerpFactor;
     camera.position.y += (destY - camera.position.y) * lerpFactor;
     camera.position.z += (destZ - camera.position.z) * lerpFactor;

@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { useCockpitStore } from '../../store/cockpitStore';
+import { soundFx } from '../../services/soundFx';
+import { cutsceneDirector } from '../../services/cutscene';
 
 const GLB_PATH = `${import.meta.env.BASE_URL}models/avatar.glb`;
 
@@ -468,8 +470,10 @@ function CurvedCyberCard({ item, radius, arcAngle = 0.74, height = 0.046 }) {
     const tabIndex = tabMap[item.label] ?? 0;
     const store = useCockpitStore.getState();
     if (!store.isDossierOpen) {
-      store.openDossier(tabIndex);
+      soundFx.playDockClick?.();
+      store.startHeroTransition(tabIndex);
     } else {
+      soundFx.playPanelSwitch?.();
       store.switchDossierTab(tabIndex);
     }
   };
@@ -504,6 +508,8 @@ function createProceduralCyberShaderMaterial({
   bilateral = true,
   isMask = false,
   isBody = false,
+  isHand = false,
+  palmCenter = new THREE.Vector3(0, 0, 0),
   eyeCenters = [],
   eyeT = [],
   eyeB = [],
@@ -511,6 +517,9 @@ function createProceduralCyberShaderMaterial({
 }) {
   const vertexShader = `
     uniform float uIsBody;
+    uniform float uIsHand;
+    uniform float uClenchProgress;
+    uniform vec3 uPalmCenter;
     uniform mat4 uHeadMatrix;
 
     varying vec3 vLocalPosition;
@@ -533,6 +542,15 @@ function createProceduralCyberShaderMaterial({
 
         pos = mix(pos, transformedPos.xyz, weight);
         norm = normalize(mix(norm, transformedNorm, weight));
+      }
+
+      if (uIsHand > 0.5 && uClenchProgress > 0.0) {
+        // Bio-mechanical clench: fingers curl inward toward palm center
+        vec3 toCenter = uPalmCenter - pos;
+        float dist = length(toCenter);
+        // Progressive inward flex based on distance from palm core
+        vec3 clenchOffset = normalize(toCenter) * (dist * 0.46 * uClenchProgress);
+        pos += clenchOffset;
       }
 
       vLocalPosition = pos;
@@ -779,6 +797,9 @@ function createProceduralCyberShaderMaterial({
       uBilateral: { value: bilateral ? 1.0 : 0.0 },
       uIsMask: { value: isMask ? 1.0 : 0.0 },
       uIsBody: { value: isBody ? 1.0 : 0.0 },
+      uIsHand: { value: isHand ? 1.0 : 0.0 },
+      uClenchProgress: { value: 0.0 },
+      uPalmCenter: { value: palmCenter ? palmCenter.clone() : new THREE.Vector3(0, 0, 0) },
       uHeadMatrix: { value: new THREE.Matrix4() },
       uEyeCenters: { value: eyeCenters.length === 6 ? eyeCenters : defaultZeros() },
       uEyeT: { value: eyeT.length === 6 ? eyeT : defaultZeros() },
@@ -1128,6 +1149,8 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
   const rootRef = useRef();
   const headGroupRef = useRef(null);
   const bodyMeshRef = useRef(null);
+  const handMeshRef = useRef(null);
+  const handMatRef = useRef(null);
   const mazeMatRef = useRef(null);
   const currentHeadRotRef = useRef({ yaw: 0, pitch: 0 });
   const orbitRefs = useRef([]);
@@ -1144,6 +1167,11 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
   const hitAreaRef = useRef();
   const targetScaleRef = useRef(CELESTIAL_CONFIG.baseScale);
   const currentScaleRef = useRef(CELESTIAL_CONFIG.baseScale);
+
+  // ── Cinematic Hero-to-Dossier Hand Crush Transition Refs ────────────
+  const transitionStartRef = useRef(null);
+  const audioTriggeredRef = useRef({ frenzy: false, absorb: false, clench: false, crush: false });
+
   const { scene } = useGLTF(GLB_PATH);
 
   const { dualLayerScene, mazeNode } = useMemo(() => {
@@ -1229,6 +1257,8 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
         lineWidth: 0.014,
         glow: 1.85,
         bilateral: false,
+        isHand: true,
+        palmCenter: new THREE.Vector3(0.0, 0.0, 0.0),
       }),
       body: createProceduralCyberShaderMaterial({
         baseColor: '#020612',
@@ -1314,6 +1344,15 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
         child.material = matPool.hand;
         child.visible = true;
         child.renderOrder = 4;
+        handMeshRef.current = child;
+        if (child.geometry) {
+          child.geometry.computeBoundingBox();
+          const pCenter = new THREE.Vector3();
+          child.geometry.boundingBox.getCenter(pCenter);
+          if (matPool.hand.uniforms.uPalmCenter) {
+            matPool.hand.uniforms.uPalmCenter.value.copy(pCenter);
+          }
+        }
         return;
       }
 
@@ -1343,6 +1382,7 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
     });
 
     headGroupRef.current = headPivotGroup;
+    handMatRef.current = matPool.hand;
     mazeMatRef.current = matPool.maze;
     shaderMatsRef.current = [...Object.values(matPool), ...eyeMaterials];
     eyeMatsRef.current = eyeMaterials;
@@ -1527,6 +1567,28 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
       rootRef.current.rotation.set(0, 0, 0);
     }
 
+    // ── 5. Cinematic Hand Crush Transition (OOP Cutscene Engine) ───────
+    const heroTransition = useCockpitStore.getState().heroTransition;
+    let transitionScaleMultiplier = 1.0;
+    let frameState = null;
+
+    if (heroTransition && heroTransition.active) {
+      const targetTab = heroTransition.targetTab ?? 0;
+      const accentColor = heroTransition.accentColor || '#00f2fe';
+      frameState = cutsceneDirector.update(t, delta, { targetTab, accentColor });
+
+      if (frameState) {
+        transitionScaleMultiplier = frameState.coreScale ?? 1.0;
+        if (handMatRef.current?.uniforms?.uClenchProgress) {
+          handMatRef.current.uniforms.uClenchProgress.value = frameState.handClench ?? 0.0;
+        }
+      }
+    } else {
+      if (handMatRef.current?.uniforms?.uClenchProgress) {
+        handMatRef.current.uniforms.uClenchProgress.value = 0.0;
+      }
+    }
+
     // Dynamic scale interpolation (defaults to 50%, smoothly scales to 75% on hover)
     const desiredScale = coreScale !== null ? coreScale : targetScaleRef.current;
     currentScaleRef.current = THREE.MathUtils.lerp(
@@ -1534,7 +1596,7 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
       desiredScale,
       CELESTIAL_CONFIG.lerpSpeed
     );
-    const scale = currentScaleRef.current;
+    const scale = currentScaleRef.current * transitionScaleMultiplier;
 
     if (mazeNode) {
       const worldPos = new THREE.Vector3();
@@ -1562,10 +1624,34 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
       // Orbit each of the 5 cards along its independent gyroscopic cross-orbital trajectory
       INDIVIDUAL_ORBITS.forEach((orbit, i) => {
         const ref = orbitRefs.current[i];
-        if (ref) {
-          ref.position.copy(worldPos);
+        if (!ref) return;
+
+        ref.position.copy(worldPos);
+
+        if (frameState) {
+          const targetTab = heroTransition.targetTab ?? 0;
+          if (i === targetTab && typeof frameState.calculateTargetCard === 'function') {
+            const cardTransform = frameState.calculateTargetCard(orbit, scale);
+            ref.rotation.x = cardTransform.rotation.x;
+            ref.rotation.y = cardTransform.rotation.y;
+            ref.rotation.z = cardTransform.rotation.z;
+            ref.scale.setScalar(cardTransform.scale);
+            ref.visible = cardTransform.visible !== false;
+          } else if (typeof frameState.calculateOtherCard === 'function') {
+            const cardTransform = frameState.calculateOtherCard(orbit, scale);
+            ref.rotation.x = cardTransform.rotation.x;
+            ref.rotation.y = cardTransform.rotation.y;
+            ref.rotation.z = cardTransform.rotation.z;
+            ref.scale.setScalar(cardTransform.scale);
+            ref.visible = cardTransform.visible !== false;
+          }
+        } else {
+          // Normal idle gyroscopic orbit
+          ref.rotation.x = orbit.inclination[0];
           ref.rotation.y = t * orbit.speed + orbit.initialAngle;
+          ref.rotation.z = orbit.inclination[2];
           ref.scale.setScalar(scale);
+          ref.visible = true;
         }
       });
     }

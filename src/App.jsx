@@ -6,6 +6,7 @@ import { HeroBackgroundTypography, HeroForegroundHUD } from './components/hero/H
 import { CyberHUDIndexRail } from './components/common/CyberHUDIndexRail';
 import { EditorialDossier } from './components/editorial/EditorialDossier';
 import { ExpandedDetailModal } from './components/hero/ExpandedDetailModal';
+import { CinematicShockwavePost } from './components/hero/CinematicShockwavePost';
 import { ProjectDeepDiveModal } from './components/cockpit/ProjectDeepDiveModal';
 import BlogModal from './components/common/BlogModal';
 import PdfViewerModal from './components/common/PdfViewerModal';
@@ -28,6 +29,9 @@ export default function App() {
       {/* ── 3. Foreground HUD Overlays (Layer 3: z-20/z-30) ─────────── */}
       <HeroTopNav />
       <HeroForegroundHUD />
+
+      {/* ── Fullscreen Cinematic Shockwave Overlay (Layer: z-55) ────── */}
+      <CinematicShockwavePost />
 
       {/* ── 4. Unified Primary Navigation (Layer: z-60 Desktop Rail & Mobile Dial) ── */}
       <CyberHUDIndexRail />

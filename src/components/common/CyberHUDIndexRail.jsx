@@ -26,6 +26,9 @@ export function CyberHUDIndexRail() {
   const openDossier = useCockpitStore((s) => s.openDossier);
   const closeDossier = useCockpitStore((s) => s.closeDossier);
   const switchDossierTab = useCockpitStore((s) => s.switchDossierTab);
+  const heroTransition = useCockpitStore((s) => s.heroTransition);
+  const startHeroTransition = useCockpitStore((s) => s.startHeroTransition);
+  const skipHeroTransition = useCockpitStore((s) => s.skipHeroTransition);
 
   const [hoveredTab, setHoveredTab] = useState(null);
   const [isMobileDialOpen, setIsMobileDialOpen] = useState(false);
@@ -39,8 +42,13 @@ export function CyberHUDIndexRail() {
   // Handle click on a navigation item
   const handleNavClick = (id) => {
     if (!isDossierOpen) {
-      soundFx.playDockClick?.();
-      openDossier(id);
+      if (heroTransition?.active) {
+        // Fast forward skip on second click during transition
+        skipHeroTransition();
+      } else {
+        soundFx.playDockClick?.();
+        startHeroTransition(id);
+      }
     } else if (activeDossierTab === id) {
       // Toggle off when clicking the already active tab
       soundFx.playClose?.();

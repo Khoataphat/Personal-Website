@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { cutsceneDirector } from '../services/cutscene';
 
 export const SECTION_THEMES = [
   { id: 0, label: 'ABOUT',   accent: '#00f2fe', secondary: '#818cf8', rgb: [0, 242, 254], name: 'Ice Cyan' },
@@ -71,6 +72,73 @@ export const useCockpitStore = create((set) => ({
   setOrbScreenPos: (pos) => set({ orbScreenPos: pos }),
   orbWorldPos: { x: 0.0, y: -0.28, z: 0.42 },
   setOrbWorldPos: (pos) => set({ orbWorldPos: pos }),
+
+  // ── Cinematic Hero-to-Dossier Hand Crush Transition System ─────────
+  heroTransition: {
+    active: false,
+    phase: 'idle', // 'idle' | 'frenzy' | 'absorb' | 'clench' | 'crush' | 'reveal'
+    progress: 0,
+    targetTab: null,
+    accentColor: '#00f2fe',
+  },
+  startHeroTransition: (tabIndex) => {
+    const targetTheme = SECTION_THEMES[tabIndex] || SECTION_THEMES[0];
+    cutsceneDirector.start(tabIndex, targetTheme.accent);
+    set({
+      heroTransition: {
+        active: true,
+        phase: 'frenzy',
+        progress: 0,
+        targetTab: tabIndex,
+        accentColor: targetTheme.accent,
+      },
+      activeThemeAccent: targetTheme.accent,
+      activeThemeSecondary: targetTheme.secondary,
+      isCardExpanded: false,
+    });
+  },
+  updateHeroTransition: (update) => set((s) => ({
+    heroTransition: { ...s.heroTransition, ...update },
+  })),
+  completeHeroTransition: () => {
+    const s = useCockpitStore.getState();
+    const tabIndex = s.heroTransition.targetTab ?? 0;
+    const targetTheme = SECTION_THEMES[tabIndex] || SECTION_THEMES[0];
+    set({
+      isDossierOpen: true,
+      activeDossierTab: tabIndex,
+      activeCard: tabIndex,
+      activeThemeAccent: targetTheme.accent,
+      activeThemeSecondary: targetTheme.secondary,
+      heroTransition: {
+        active: false,
+        phase: 'idle',
+        progress: 0,
+        targetTab: null,
+        accentColor: targetTheme.accent,
+      },
+    });
+  },
+  skipHeroTransition: () => {
+    cutsceneDirector.skip();
+    const s = useCockpitStore.getState();
+    const tabIndex = s.heroTransition.targetTab ?? 0;
+    const targetTheme = SECTION_THEMES[tabIndex] || SECTION_THEMES[0];
+    set({
+      isDossierOpen: true,
+      activeDossierTab: tabIndex,
+      activeCard: tabIndex,
+      activeThemeAccent: targetTheme.accent,
+      activeThemeSecondary: targetTheme.secondary,
+      heroTransition: {
+        active: false,
+        phase: 'idle',
+        progress: 0,
+        targetTab: null,
+        accentColor: targetTheme.accent,
+      },
+    });
+  },
   openDossier: (tabIndex = 0) => set({
     isDossierOpen: true,
     activeDossierTab: tabIndex,
@@ -83,6 +151,13 @@ export const useCockpitStore = create((set) => ({
     isDossierOpen: false,
     activeThemeAccent: '#00f2fe',
     activeThemeSecondary: '#818cf8',
+    heroTransition: {
+      active: false,
+      phase: 'idle',
+      progress: 0,
+      targetTab: null,
+      accentColor: '#00f2fe',
+    },
   }),
   switchDossierTab: (tabIndex) => set({
     activeDossierTab: tabIndex,

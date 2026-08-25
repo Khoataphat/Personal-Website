@@ -114,6 +114,157 @@ const MARQUEE_ROW_2_ITEMS = [
 ];
 
 /**
+ * 3D Glass Fracture Shards Overlay
+ * Renders high-fidelity crystalline polygonal glass shards exploding into Z-axis
+ * when the Hand Crush Shockwave triggers at Phase 4.
+ */
+function GlassFractureOverlay({ active, accentColor, onComplete }) {
+  const [shards, setShards] = useState([]);
+  const animRef = useRef(null);
+  const startTimeRef = useRef(null);
+
+  useEffect(() => {
+    if (!active) {
+      setShards([]);
+      return;
+    }
+
+    const w = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const h = typeof window !== 'undefined' ? window.innerHeight : 800;
+
+    // Generate ~128 dynamic Voronoi-like crystal glass shards
+    const NUM_SHARDS = 128;
+    const newShards = [];
+
+    // Predefined faceted crystal polygon clip paths
+    const polygonPaths = [
+      'polygon(50% 0%, 0% 100%, 100% 100%)',
+      'polygon(20% 0%, 90% 15%, 100% 85%, 10% 100%)',
+      'polygon(0% 0%, 100% 25%, 75% 100%, 15% 80%)',
+      'polygon(35% 0%, 100% 0%, 80% 100%, 0% 65%)',
+      'polygon(0% 30%, 65% 0%, 100% 70%, 30% 100%)',
+      'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+      'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
+    ];
+
+    for (let i = 0; i < NUM_SHARDS; i++) {
+      const isRow1 = i < NUM_SHARDS / 2;
+      // Spread shards horizontally across the marquee track
+      const originX = (w * 0.08) + (w * 0.84) * ((i % (NUM_SHARDS / 2)) / (NUM_SHARDS / 2)) + (Math.random() * 40 - 20);
+      const originY = isRow1
+        ? h * 0.62 + (Math.random() * 60 - 30)
+        : h * 0.72 + (Math.random() * 60 - 30);
+
+      const shardColor = isRow1 ? (accentColor || '#00f2fe') : '#c084fc';
+      const angle = (Math.random() * Math.PI * 2);
+      const speed = 220 + Math.random() * 540;
+
+      newShards.push({
+        id: i,
+        originX,
+        originY,
+        x: originX,
+        y: originY,
+        z: 0,
+        vx: Math.cos(angle) * speed + (Math.random() - 0.5) * 140,
+        vy: Math.sin(angle) * speed - (100 + Math.random() * 180), // upward kinetic burst
+        vz: -350 - Math.random() * 1100, // Disperse deep into Z-depth
+        rotX: Math.random() * 360,
+        rotY: Math.random() * 360,
+        rotZ: Math.random() * 360,
+        vRotX: (Math.random() - 0.5) * 640,
+        vRotY: (Math.random() - 0.5) * 640,
+        vRotZ: (Math.random() - 0.5) * 480,
+        size: 16 + Math.random() * 48,
+        aspect: 0.5 + Math.random() * 1.4,
+        clipPath: polygonPaths[i % polygonPaths.length],
+        color: shardColor,
+        opacity: 0.98,
+      });
+    }
+
+    setShards(newShards);
+    startTimeRef.current = performance.now();
+
+    const DURATION = 1350; // ms
+
+    const animate = (now) => {
+      const elapsed = (now - startTimeRef.current) / 1000;
+      const progress = Math.min(1, (now - startTimeRef.current) / DURATION);
+
+      if (progress < 1) {
+        setShards((prev) =>
+          prev.map((s) => {
+            const drag = Math.pow(0.32, elapsed);
+            const curX = s.originX + s.vx * elapsed * drag;
+            const curY = s.originY + s.vy * elapsed * drag + (elapsed * elapsed * 200); // gentle gravity
+            const curZ = s.vz * elapsed;
+            const curRotX = s.rotX + s.vRotX * elapsed;
+            const curRotY = s.rotY + s.vRotY * elapsed;
+            const curRotZ = s.rotZ + s.vRotZ * elapsed;
+            const curOpacity = Math.max(0, (1 - Math.pow(progress, 1.6)) * 0.98);
+
+            return {
+              ...s,
+              x: curX,
+              y: curY,
+              z: curZ,
+              rotX: curRotX,
+              rotY: curRotY,
+              rotZ: curRotZ,
+              opacity: curOpacity,
+            };
+          })
+        );
+        animRef.current = requestAnimationFrame(animate);
+      } else {
+        setShards([]);
+        onComplete?.();
+      }
+    };
+
+    animRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, [active, accentColor, onComplete]);
+
+  if (!active || shards.length === 0) return null;
+
+  return (
+    <div
+      aria-hidden="true"
+      className="fixed inset-0 pointer-events-none z-1 overflow-hidden"
+      style={{ perspective: '1200px', transformStyle: 'preserve-3d' }}
+    >
+      {shards.map((s) => (
+        <div
+          key={s.id}
+          style={{
+            position: 'absolute',
+            left: `${s.x}px`,
+            top: `${s.y}px`,
+            width: `${s.size}px`,
+            height: `${s.size * s.aspect}px`,
+            clipPath: s.clipPath,
+            background: `linear-gradient(135deg, rgba(255,255,255,0.85) 0%, ${s.color}cc 40%, rgba(5,10,25,0.7) 100%)`,
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+            border: `1px solid ${s.color}`,
+            boxShadow: `0 0 14px ${s.color}, inset 0 0 8px rgba(255,255,255,0.6)`,
+            opacity: s.opacity,
+            transform: `translate3d(-50%, -50%, ${s.z}px) rotateX(${s.rotX}deg) rotateY(${s.rotY}deg) rotateZ(${s.rotZ}deg)`,
+            transformStyle: 'preserve-3d',
+            willChange: 'transform, opacity',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
  * HeroBackgroundTypography
  *
  * Ambient Kinetic Chrome Marquee Typography Portal:
@@ -123,10 +274,15 @@ const MARQUEE_ROW_2_ITEMS = [
  *   - Metallic Chrome & Frosted Glass gradient styling (Ice Cyan & Lavender Violet).
  *   - Subtle ambient opacity (0.50) letting the 3D Avatar command 100% foreground focus.
  *   - 100% GPU accelerated, 60 FPS silky smooth continuous flow.
+ *   - Shatters into 3D Glass Fracture Shards when Hand Crush Shockwave triggers!
  */
 export function HeroBackgroundTypography() {
   const [mounted, setMounted] = useState(false);
   const isDossierOpen = useCockpitStore((s) => s.isDossierOpen);
+  const heroTransition = useCockpitStore((s) => s.heroTransition);
+
+  const isTransitioning = heroTransition.active;
+  const isShattered = isTransitioning && (heroTransition.phase === 'crush' || heroTransition.phase === 'reveal');
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 150);
@@ -138,72 +294,81 @@ export function HeroBackgroundTypography() {
   const row2Repeated = useMemo(() => Array(12).fill('SOFTWARE ENGINEER'), []);
 
   return (
-    <div
-      className="fixed inset-0 z-0 pointer-events-none flex flex-col items-center justify-center select-none overflow-hidden"
-      style={{
-        opacity: isDossierOpen ? 0 : (mounted ? 0.50 : 0),
-        transition: 'opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
-      }}
-    >
-      {/* Kinetic Container with Screen Edge Vignette */}
+    <>
+      {/* ── 3D Glass Shards Fracture Effect ────────────────────────── */}
+      <GlassFractureOverlay
+        active={isShattered}
+        accentColor={heroTransition.accentColor || '#00f2fe'}
+      />
+
+      {/* ── Continuous Ambient Kinetic Marquee ──────────────────────── */}
       <div
-        className="marquee-edge-fade w-screen flex flex-col items-center justify-center gap-3 md:gap-5 overflow-hidden"
+        className="fixed inset-0 z-0 pointer-events-none flex flex-col items-center justify-center select-none overflow-hidden"
         style={{
-          transform: 'translateY(36%)',
-          fontFamily: "'Outfit', 'Orbitron', sans-serif",
+          opacity: (isDossierOpen || isShattered) ? 0 : (mounted ? 0.50 : 0),
+          transition: isShattered ? 'opacity 0.05s ease-out' : 'opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        {/* ── ROW 1: Glides LEFT (←←←) Chrome Ice Cyan ────────────────────── */}
-        <div className="w-full overflow-hidden flex whitespace-nowrap py-1">
-          <div className="kinetic-track-left items-center">
-            {row1Repeated.map((item, idx) => (
-              <span key={`r1-${idx}`} className="inline-flex items-center">
-                <span
-                  className="chrome-text-cyan uppercase"
-                  style={{
-                    fontSize: 'clamp(30px, 5.2vw, 92px)',
-                    lineHeight: 0.95,
-                  }}
-                >
-                  {item}
+        {/* Kinetic Container with Screen Edge Vignette */}
+        <div
+          className="marquee-edge-fade w-screen flex flex-col items-center justify-center gap-3 md:gap-5 overflow-hidden"
+          style={{
+            transform: 'translateY(36%)',
+            fontFamily: "'Outfit', 'Orbitron', sans-serif",
+          }}
+        >
+          {/* ── ROW 1: Glides LEFT (←←←) Chrome Ice Cyan ────────────────────── */}
+          <div className="w-full overflow-hidden flex whitespace-nowrap py-1">
+            <div className="kinetic-track-left items-center">
+              {row1Repeated.map((item, idx) => (
+                <span key={`r1-${idx}`} className="inline-flex items-center">
+                  <span
+                    className="chrome-text-cyan uppercase"
+                    style={{
+                      fontSize: 'clamp(30px, 5.2vw, 92px)',
+                      lineHeight: 0.95,
+                    }}
+                  >
+                    {item}
+                  </span>
+                  <span
+                    className="mx-10 md:mx-20 text-[#00e5ff] opacity-40 font-light select-none"
+                    style={{ fontSize: 'clamp(20px, 3.2vw, 54px)' }}
+                  >
+                    {idx % 2 === 0 ? '✦' : '◈'}
+                  </span>
                 </span>
-                <span
-                  className="mx-10 md:mx-20 text-[#00e5ff] opacity-40 font-light select-none"
-                  style={{ fontSize: 'clamp(20px, 3.2vw, 54px)' }}
-                >
-                  {idx % 2 === 0 ? '✦' : '◈'}
-                </span>
-              </span>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* ── ROW 2: Glides RIGHT (→→→) Chrome Lavender Violet ────────────── */}
-        <div className="w-full overflow-hidden flex whitespace-nowrap py-1">
-          <div className="kinetic-track-right items-center">
-            {row2Repeated.map((item, idx) => (
-              <span key={`r2-${idx}`} className="inline-flex items-center">
-                <span
-                  className="chrome-text-violet uppercase"
-                  style={{
-                    fontSize: 'clamp(30px, 5.2vw, 92px)',
-                    lineHeight: 0.95,
-                  }}
-                >
-                  {item}
+          {/* ── ROW 2: Glides RIGHT (→→→) Chrome Lavender Violet ────────────── */}
+          <div className="w-full overflow-hidden flex whitespace-nowrap py-1">
+            <div className="kinetic-track-right items-center">
+              {row2Repeated.map((item, idx) => (
+                <span key={`r2-${idx}`} className="inline-flex items-center">
+                  <span
+                    className="chrome-text-violet uppercase"
+                    style={{
+                      fontSize: 'clamp(30px, 5.2vw, 92px)',
+                      lineHeight: 0.95,
+                    }}
+                  >
+                    {item}
+                  </span>
+                  <span
+                    className="mx-10 md:mx-20 text-[#c084fc] opacity-40 font-light select-none"
+                    style={{ fontSize: 'clamp(20px, 3.2vw, 54px)' }}
+                  >
+                    {idx % 2 === 0 ? '◈' : '✦'}
+                  </span>
                 </span>
-                <span
-                  className="mx-10 md:mx-20 text-[#c084fc] opacity-40 font-light select-none"
-                  style={{ fontSize: 'clamp(20px, 3.2vw, 54px)' }}
-                >
-                  {idx % 2 === 0 ? '◈' : '✦'}
-                </span>
-              </span>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
