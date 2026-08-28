@@ -520,6 +520,8 @@ function createProceduralCyberShaderMaterial({
     uniform float uIsHand;
     uniform float uClenchProgress;
     uniform vec3 uPalmCenter;
+    uniform vec3 uHandBoundsMin;
+    uniform vec3 uHandBoundsMax;
     uniform mat4 uHeadMatrix;
 
     varying vec3 vLocalPosition;
@@ -545,12 +547,64 @@ function createProceduralCyberShaderMaterial({
       }
 
       if (uIsHand > 0.5 && uClenchProgress > 0.0) {
-        // Bio-mechanical clench: fingers curl inward toward palm center
-        vec3 toCenter = uPalmCenter - pos;
-        float dist = length(toCenter);
-        // Progressive inward flex based on distance from palm core
-        vec3 clenchOffset = normalize(toCenter) * (dist * 0.46 * uClenchProgress);
-        pos += clenchOffset;
+        // True Biomechanical Wrap-Around Curl (Rotation-Based Finger Flexion)
+        // ──────────────────────────────────────────────────────────────────
+        // Based on the anatomical model: fingers rotate around the Metacarpo-Phalangeal
+        // (knuckle) joint axis (roughly the palm's local X axis) to wrap inward.
+        //
+        // Key design:
+        //   - Wrist/base palm vertices (low Y, near wrist) = ZERO rotation (anchor to sleeve)
+        //   - Fingertip vertices (high Y, far from palm center) = FULL rotation arc
+        //   - Rotation axis = palm X-axis through palmCenter (MCP joint hinge line)
+        //   - Max flexion = ~80° (1.4 rad) — natural closed fist angle
+
+        vec3 handSpan = max(uHandBoundsMax - uHandBoundsMin, vec3(0.001));
+
+        // ① Wrist Anchor Weight (0.0 = fixed, 1.0 = fully mobile fingertip)
+        //    Uses NORMALIZED Y in [0,1] so bounds space is irrelevant to absolute scale
+        float normY = (pos.y - uHandBoundsMin.y) / handSpan.y;
+        float wristAnchor = smoothstep(0.0, 0.35, normY);
+
+        // ② Radial Distance Weight (palm center → fingertip)
+        //    Vertices near the palm core (knuckles) start curling later than fingertips
+        vec3 rel = pos - uPalmCenter;
+        float dist = length(rel);
+        float normDist = dist / (length(handSpan) * 0.55);
+        float radialWeight = smoothstep(0.05, 0.90, normDist);
+
+        // ③ Combined curl weight: both Y-gradient AND radial distance must be present
+        float curlWeight = pow(wristAnchor * radialWeight, 1.35);
+
+        // ④ True Rotation: rotate rel vector around palm's local X-axis
+        //    This simulates MCP joint flexion (knuckle hinge) anatomically
+        //    Max flexion angle = 1.40 rad (~80°) at full clench
+        float maxAngle = 1.40;
+        float angle = curlWeight * uClenchProgress * maxAngle;
+        float cosA = cos(angle);
+        float sinA = sin(angle);
+
+        // Rotate rel around X-axis (palm's lateral/horizontal hinge axis):
+        //   y' = y*cos - z*sin  (curl fingers forward/down)
+        //   z' = y*sin + z*cos
+        vec3 rotated = vec3(
+          rel.x,
+          rel.y * cosA - rel.z * sinA,
+          rel.y * sinA + rel.z * cosA
+        );
+
+        // Blend original position → rotated position smoothly
+        pos = uPalmCenter + mix(rel, rotated, curlWeight * uClenchProgress);
+
+        // ⑤ Surface Normal Reorientation for consistent specular highlights
+        //    Apply same rotation to normal vector with reduced strength
+        float normAngle = angle * 0.65;
+        float cosN = cos(normAngle);
+        float sinN = sin(normAngle);
+        norm = normalize(vec3(
+          norm.x,
+          norm.y * cosN - norm.z * sinN,
+          norm.y * sinN + norm.z * cosN
+        ));
       }
 
       vLocalPosition = pos;
@@ -573,6 +627,8 @@ function createProceduralCyberShaderMaterial({
     uniform float uMouseSpeed;
     uniform float uBilateral;
     uniform float uIsMask;
+    uniform float uIsHand;
+    uniform float uClenchProgress;
     uniform vec3 uEyeCenters[6];
     uniform vec3 uEyeT[6];
     uniform vec3 uEyeB[6];
@@ -760,13 +816,27 @@ function createProceduralCyberShaderMaterial({
       vec3 carbonBase = uBaseColor * (lighting + carbonHeight * 0.35);
       vec3 specSheen = mix(vec3(0.85, 0.92, 1.0), uRimColor, 0.35) * (spec1 * 0.75 + spec2 * 0.35);
 
-      // Final composite with razor-thin laser emissive
-      vec3 laserEmissive = uLineColor * (laserFactor * laserGlow);
-      vec3 laserWaveFlash = vec3(1.0) * (scanWave * laserFactor * 1.2);
+      // Dynamic Energy Overload Glow & Cyber Arc Pulses during clench
+      float clenchGlow = 1.0;
+      float arcFlash = 0.0;
+      if (uIsHand > 0.5 && uClenchProgress > 0.0) {
+        // High-energy overload: glow amplifies dynamically as fingers compress the core
+        clenchGlow = 1.0 + uClenchProgress * 1.95;
+        // High-frequency cyber arc lightning pulses running along the fingers
+        float arcWave1 = sin(vLocalPosition.y * 36.0 - uTime * 30.0);
+        float arcWave2 = cos(vLocalPosition.x * 42.0 + uTime * 24.0);
+        float arcPattern = smoothstep(0.70, 0.98, arcWave1 * arcWave2);
+        arcFlash = arcPattern * uClenchProgress * 2.8;
+      }
+
+      // Final composite with razor-thin laser emissive and high-voltage arc flashes
+      vec3 laserEmissive = uLineColor * (laserFactor * laserGlow * clenchGlow);
+      vec3 arcEmissive = vec3(0.85, 0.95, 1.0) * (arcFlash * laserFactor);
+      vec3 laserWaveFlash = vec3(1.0) * (scanWave * laserFactor * 1.2) + arcEmissive;
 
       vec3 col = (carbonBase + specSheen) * socketAO;
       col = mix(col, laserEmissive + laserWaveFlash, clamp(laserFactor, 0.0, 1.0));
-      col += uRimColor * (fresnel * 0.55 * breath);
+      col += uRimColor * (fresnel * (0.55 + uClenchProgress * 0.85) * breath);
       col = clamp(col, vec3(0.0), vec3(4.0));
 
       gl_FragColor = vec4(col, 1.0);
@@ -800,6 +870,8 @@ function createProceduralCyberShaderMaterial({
       uIsHand: { value: isHand ? 1.0 : 0.0 },
       uClenchProgress: { value: 0.0 },
       uPalmCenter: { value: palmCenter ? palmCenter.clone() : new THREE.Vector3(0, 0, 0) },
+      uHandBoundsMin: { value: new THREE.Vector3(-1.0, -1.0, -1.0) },
+      uHandBoundsMax: { value: new THREE.Vector3(1.0, 1.0, 1.0) },
       uHeadMatrix: { value: new THREE.Matrix4() },
       uEyeCenters: { value: eyeCenters.length === 6 ? eyeCenters : defaultZeros() },
       uEyeT: { value: eyeT.length === 6 ? eyeT : defaultZeros() },
@@ -1172,6 +1244,17 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
   const transitionStartRef = useRef(null);
   const audioTriggeredRef = useRef({ frenzy: false, absorb: false, clench: false, crush: false });
 
+  // ── Performance: Pre-allocated Scratch Objects (avoid GC from per-frame `new`) ──
+  const frameCounterRef = useRef(0);          // Temporal throttle counter
+  const _scratchColor = useRef(new THREE.Color());
+  const _scratchColor2 = useRef(new THREE.Color());
+  const _scratchVec3 = useRef(new THREE.Vector3());
+  const _scratchVec3b = useRef(new THREE.Vector3());
+  const _scratchMat4 = useRef(new THREE.Matrix4());
+  const _scratchMat4b = useRef(new THREE.Matrix4());
+  const _scratchMat4c = useRef(new THREE.Matrix4());
+  const _scratchQuat = useRef(new THREE.Quaternion());
+
   const { scene } = useGLTF(GLB_PATH);
 
   const { dualLayerScene, mazeNode } = useMemo(() => {
@@ -1352,6 +1435,12 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
           if (matPool.hand.uniforms.uPalmCenter) {
             matPool.hand.uniforms.uPalmCenter.value.copy(pCenter);
           }
+          if (matPool.hand.uniforms.uHandBoundsMin) {
+            matPool.hand.uniforms.uHandBoundsMin.value.copy(child.geometry.boundingBox.min);
+          }
+          if (matPool.hand.uniforms.uHandBoundsMax) {
+            matPool.hand.uniforms.uHandBoundsMax.value.copy(child.geometry.boundingBox.max);
+          }
         }
         return;
       }
@@ -1394,6 +1483,35 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
     const initialScale = TARGET_HEIGHT / naturalHeight;
     cloned.scale.setScalar(initialScale);
 
+    // ── CRITICAL FIX: Recompute Hand Bounding Box AFTER model scale ──────
+    // geometry.boundingBox is in local (pre-scale) space; when we pass it to
+    // the vertex shader as uHandBoundsMin/Max, the shader works in that same
+    // local space — so the scale factor cancels out and the bounds remain correct.
+    // However, the palmCenter (uPalmCenter) IS also in local space, so everything
+    // is self-consistent. We just need to ensure computeBoundingBox() has been
+    // called so the values are not null.
+    cloned.traverse((child) => {
+      if (!child.isMesh && !child.isSkinnedMesh) return;
+      const meshName = child.name || '';
+      if ((meshName.startsWith('Hand') || meshName.includes('Hand')) && child.geometry) {
+        child.geometry.computeBoundingBox();
+        const bb = child.geometry.boundingBox;
+        const pCenter = new THREE.Vector3();
+        bb.getCenter(pCenter);
+
+        // Update uniforms on the shared hand material
+        if (matPool.hand.uniforms.uPalmCenter) {
+          matPool.hand.uniforms.uPalmCenter.value.copy(pCenter);
+        }
+        if (matPool.hand.uniforms.uHandBoundsMin) {
+          matPool.hand.uniforms.uHandBoundsMin.value.copy(bb.min);
+        }
+        if (matPool.hand.uniforms.uHandBoundsMax) {
+          matPool.hand.uniforms.uHandBoundsMax.value.copy(bb.max);
+        }
+      }
+    });
+
     return { dualLayerScene: cloned, mazeNode: foundMaze };
   }, [scene]);
 
@@ -1405,12 +1523,17 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
     const isDossierOpen = useCockpitStore.getState().isDossierOpen;
     const activeThemeAccent = useCockpitStore.getState().activeThemeAccent || '#00f2fe';
 
+    // Increment frame counter for temporal throttle
+    frameCounterRef.current = (frameCounterRef.current + 1) % 120;
+    const isEvenFrame = (frameCounterRef.current % 2) === 0;
+
     // ── 0. Dynamic Singularity Core Plasma Shader Harmonization ───────
-    if (mazeMatRef.current && mazeMatRef.current.uniforms) {
-      const targetCol = new THREE.Color(activeThemeAccent);
-      mazeMatRef.current.uniforms.uCyanPlasma.value.lerp(targetCol, delta * 6.0);
-      const targetCol2 = targetCol.clone().offsetHSL(0.06, 0.0, 0.18);
-      mazeMatRef.current.uniforms.uPurplePlasma.value.lerp(targetCol2, delta * 6.0);
+    // Throttled: update color every 2 frames — imperceptible visual difference, ~50% CPU savings
+    if (isEvenFrame && mazeMatRef.current && mazeMatRef.current.uniforms) {
+      _scratchColor.current.set(activeThemeAccent);
+      mazeMatRef.current.uniforms.uCyanPlasma.value.lerp(_scratchColor.current, delta * 6.0);
+      _scratchColor2.current.copy(_scratchColor.current).offsetHSL(0.06, 0.0, 0.18);
+      mazeMatRef.current.uniforms.uPurplePlasma.value.lerp(_scratchColor2.current, delta * 6.0);
     }
 
     const dx = rawMouse.x - prevMouseRef.current.x;
@@ -1457,8 +1580,8 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
     const targetWorldY = mouse.y * 1.8 - 0.2;
     const targetWorldZ = 2.4;
 
-    const tempEyeWorldPos = new THREE.Vector3();
-    const tempGaze = new THREE.Vector3();
+    const tempEyeWorldPos = _scratchVec3.current;
+    const tempGaze = _scratchVec3b.current;
 
     eyeMeshesRef.current.forEach((eyeMesh, i) => {
       const mat = eyeMatsRef.current[i];
@@ -1541,22 +1664,25 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
     if (headGroupRef.current && bodyMeshRef.current) {
       const headGroup = headGroupRef.current;
 
-      const pivotInBodyMesh = new THREE.Vector3(0.0, 0.166876, 0.161891);
+      // Pre-allocated scratch objects (no `new` per frame)
+      _scratchVec3.current.set(0.0, 0.166876, 0.161891); // pivotInBodyMesh
+      _scratchQuat.current.set(-0.7071068, 0, 0, 0.7071067); // bodyQuatInRoot
 
-      // Delta rotation of head in bodyMesh local space:
-      const bodyQuatInRoot = new THREE.Quaternion(-0.7071068, 0, 0, 0.7071067);
-      const headQuatInRoot = headGroup.quaternion.clone();
-      const deltaQuat = bodyQuatInRoot.clone().invert().multiply(headQuatInRoot).multiply(bodyQuatInRoot);
+      const headQuatInRoot = headGroup.quaternion;
+      // deltaQuat = bodyQuat.invert * headQuat * bodyQuat
+      // Reuse _scratchQuat: invert in-place, multiply, multiply back
+      const bqCopy = _scratchQuat.current.clone().invert();
+      const deltaQuat = bqCopy.multiply(headQuatInRoot).multiply(_scratchQuat.current);
 
-      const uHeadMatrix = new THREE.Matrix4();
-      const m1 = new THREE.Matrix4().makeTranslation(-pivotInBodyMesh.x, -pivotInBodyMesh.y, -pivotInBodyMesh.z);
-      const m2 = new THREE.Matrix4().makeRotationFromQuaternion(deltaQuat);
-      const m3 = new THREE.Matrix4().makeTranslation(pivotInBodyMesh.x, pivotInBodyMesh.y, pivotInBodyMesh.z);
-      uHeadMatrix.multiplyMatrices(m3, m2).multiply(m1);
+      const px = _scratchVec3.current.x, py = _scratchVec3.current.y, pz = _scratchVec3.current.z;
+      _scratchMat4b.current.makeTranslation(-px, -py, -pz);        // m1
+      _scratchMat4c.current.makeRotationFromQuaternion(deltaQuat); // m2
+      _scratchMat4.current.makeTranslation(px, py, pz);            // m3
+      _scratchMat4.current.multiplyMatrices(_scratchMat4.current, _scratchMat4c.current).multiply(_scratchMat4b.current);
 
       shaderMatsRef.current.forEach((mat) => {
         if (mat.uniforms && mat.uniforms.uHeadMatrix) {
-          mat.uniforms.uHeadMatrix.value.copy(uHeadMatrix);
+          mat.uniforms.uHeadMatrix.value.copy(_scratchMat4.current);
         }
       });
     }

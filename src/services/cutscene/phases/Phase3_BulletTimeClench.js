@@ -30,10 +30,24 @@ export class Phase3_BulletTimeClench extends TransitionPhase {
     const cfg = this.config;
 
     // Core super-compresses from swell size down to micro-singularity bead
-    const coreScale = this.lerp(CUTSCENE_CONFIG.absorb.peakCoreScale, cfg.minCoreScale, smoothP);
+    const coreScale = this.lerp(CUTSCENE_CONFIG.absorb.peakCoreScale, cfg.minCoreScale, Math.pow(smoothP, 1.25));
 
-    // Hand clench smooth progression [0..1]
-    const handClench = smoothP;
+    // Biomechanical Grip Timing Curve:
+    // - 0.0 - 0.30: Soft initial gather (0.0 -> 0.25)
+    // - 0.30 - 0.85: High-torque compression (0.25 -> 0.95)
+    // - 0.85 - 1.00: Maximum lock + high-frequency tension micro-vibration
+    let handClench = 0.0;
+    if (p < 0.30) {
+      const tPre = p / 0.30;
+      handClench = 0.25 * this.smoothstep(tPre, 0.0, 1.0);
+    } else if (p < 0.85) {
+      const tMid = (p - 0.30) / 0.55;
+      handClench = 0.25 + 0.70 * this.smoothstep(tMid, 0.0, 1.0);
+    } else {
+      const tEnd = (p - 0.85) / 0.15;
+      const vibration = Math.sin(elapsed * 75.0) * 0.02 * tEnd;
+      handClench = Math.min(1.0, 0.95 + 0.05 * tEnd + vibration);
+    }
 
     return {
       phase: this.name,

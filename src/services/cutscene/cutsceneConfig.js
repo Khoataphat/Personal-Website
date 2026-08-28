@@ -13,30 +13,36 @@
  */
 
 export const CUTSCENE_CONFIG = {
-  // ── 1. Phase Durations (Total: 5.2s) ──────────────────────────────
+  // ── 1. Phase Durations (Total: 5.5s) ──────────────────────────────
   durations: {
     frenzy: 1.30,   // Phase 1: Spiral acceleration (0.0s – 1.3s)
     absorb: 0.90,   // Phase 2: Core swell & fusion (1.3s – 2.2s)
-    clench: 1.40,   // Phase 3: Bullet-time slow-mo clench (2.2s – 3.6s)
-    crush: 0.90,    // Phase 4: Supernova burst & fracture (3.6s – 4.5s)
-    reveal: 0.70,   // Phase 5: Camera recoil & dossier unveil (4.5s – 5.2s)
+    clench: 1.80,   // Phase 3: Bullet-time slow-mo clench (2.2s – 4.0s) [+0.4s for cinema]
+    crush: 0.90,    // Phase 4: Supernova burst & fracture (4.0s – 4.9s)
+    reveal: 0.70,   // Phase 5: Camera recoil & dossier unveil (4.9s – 5.6s)
   },
 
   // ── 2. Phase 1: Frenzy Spiral Parameters ──────────────────────────
   frenzy: {
-    spiralLoops: 3.0,          // Number of graceful spiral loops around hand
+    spiralLoops: 3.5,          // Number of graceful spiral loops (upgraded: 3.0 → 3.5)
     speedMultiplier: 8.0,      // Max angular speed acceleration
     speedExponent: 1.4,        // Acceleration curve exponent
     inclinationAmp: 0.45,      // Wave oscillation amplitude
     minSpiralScale: 0.01,      // Target card minimum scale at point of entry
     fadeCardExponent: 1.4,     // Non-target cards fade curve exponent
     fadeCardMultiplier: 1.3,   // Non-target cards fade speed
+    plasmaTrail: true,         // Plasma trail intensity follows spiral progress
   },
 
   // ── 3. Phase 2: Core Absorption & Fusion Parameters ───────────────
   absorb: {
     peakCoreScale: 1.95,       // Maximum swell multiplier
     colorInterpolationSpeed: 4.5,
+    ripple: {
+      enabled: true,           // Concentric shockwave ripple when core swells
+      scale: 1.8,              // Max ripple radius multiplier relative to core
+      duration: 0.5,           // Ripple wave lifetime in seconds
+    },
   },
 
   // ── 4. Phase 3: Bullet-Time Slow-Mo Clench Parameters ─────────────
@@ -79,7 +85,8 @@ export const CUTSCENE_CONFIG = {
       flashAlpha: 0.85,
     },
     glassFracture: {
-      numShards: 128,
+      numShards: 56,           // Reduced from 128 → 56 for performance (instanced)
+      useInstanced: true,      // Use THREE.InstancedMesh for single draw call
       durationMs: 1350,
       zDispersalMin: 350,
       zDispersalMax: 1450,

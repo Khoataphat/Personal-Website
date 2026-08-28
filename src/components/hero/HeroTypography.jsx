@@ -117,24 +117,27 @@ const MARQUEE_ROW_2_ITEMS = [
  * 3D Glass Fracture Shards Overlay
  * Renders high-fidelity crystalline polygonal glass shards exploding into Z-axis
  * when the Hand Crush Shockwave triggers at Phase 4.
+ *
+ * Performance: Uses direct DOM ref style mutation during animation (0 React re-renders).
  */
 function GlassFractureOverlay({ active, accentColor, onComplete }) {
-  const [shards, setShards] = useState([]);
+  const containerRef = useRef(null);
   const animRef = useRef(null);
   const startTimeRef = useRef(null);
+  const shardsDataRef = useRef([]);
 
   useEffect(() => {
     if (!active) {
-      setShards([]);
+      if (containerRef.current) containerRef.current.innerHTML = '';
+      shardsDataRef.current = [];
       return;
     }
 
     const w = typeof window !== 'undefined' ? window.innerWidth : 1200;
     const h = typeof window !== 'undefined' ? window.innerHeight : 800;
 
-    // Generate ~128 dynamic Voronoi-like crystal glass shards
-    const NUM_SHARDS = 128;
-    const newShards = [];
+    // Reduced: 56 shards (from 128) for significant FPS gain without perceptible quality loss
+    const NUM_SHARDS = 56;
 
     // Predefined faceted crystal polygon clip paths
     const polygonPaths = [
@@ -147,9 +150,16 @@ function GlassFractureOverlay({ active, accentColor, onComplete }) {
       'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
     ];
 
+    // Build shard data and create DOM elements once (no per-frame React re-render)
+    const container = containerRef.current;
+    if (!container) return;
+    container.innerHTML = '';
+
+    const shards = [];
+    const domElements = [];
+
     for (let i = 0; i < NUM_SHARDS; i++) {
       const isRow1 = i < NUM_SHARDS / 2;
-      // Spread shards horizontally across the marquee track
       const originX = (w * 0.08) + (w * 0.84) * ((i % (NUM_SHARDS / 2)) / (NUM_SHARDS / 2)) + (Math.random() * 40 - 20);
       const originY = isRow1
         ? h * 0.62 + (Math.random() * 60 - 30)
@@ -158,67 +168,74 @@ function GlassFractureOverlay({ active, accentColor, onComplete }) {
       const shardColor = isRow1 ? (accentColor || '#00f2fe') : '#c084fc';
       const angle = (Math.random() * Math.PI * 2);
       const speed = 220 + Math.random() * 540;
+      const size = 16 + Math.random() * 48;
+      const aspect = 0.5 + Math.random() * 1.4;
 
-      newShards.push({
-        id: i,
-        originX,
-        originY,
-        x: originX,
-        y: originY,
-        z: 0,
+      const shard = {
+        originX, originY,
         vx: Math.cos(angle) * speed + (Math.random() - 0.5) * 140,
-        vy: Math.sin(angle) * speed - (100 + Math.random() * 180), // upward kinetic burst
-        vz: -350 - Math.random() * 1100, // Disperse deep into Z-depth
+        vy: Math.sin(angle) * speed - (100 + Math.random() * 180),
+        vz: -350 - Math.random() * 1100,
         rotX: Math.random() * 360,
         rotY: Math.random() * 360,
         rotZ: Math.random() * 360,
         vRotX: (Math.random() - 0.5) * 640,
         vRotY: (Math.random() - 0.5) * 640,
         vRotZ: (Math.random() - 0.5) * 480,
-        size: 16 + Math.random() * 48,
-        aspect: 0.5 + Math.random() * 1.4,
-        clipPath: polygonPaths[i % polygonPaths.length],
-        color: shardColor,
-        opacity: 0.98,
-      });
+      };
+      shards.push(shard);
+
+      // Create DOM element once, mutate style directly in animation loop
+      const el = document.createElement('div');
+      el.style.cssText = `
+        position: absolute;
+        width: ${size}px;
+        height: ${size * aspect}px;
+        clip-path: ${polygonPaths[i % polygonPaths.length]};
+        background: linear-gradient(135deg, rgba(255,255,255,0.85) 0%, ${shardColor}cc 40%, rgba(5,10,25,0.7) 100%);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        border: 1px solid ${shardColor};
+        box-shadow: 0 0 14px ${shardColor}, inset 0 0 8px rgba(255,255,255,0.6);
+        will-change: transform, opacity;
+        transform-style: preserve-3d;
+      `;
+      container.appendChild(el);
+      domElements.push(el);
     }
 
-    setShards(newShards);
+    shardsDataRef.current = shards;
     startTimeRef.current = performance.now();
-
-    const DURATION = 1350; // ms
+    const DURATION = 1350;
 
     const animate = (now) => {
       const elapsed = (now - startTimeRef.current) / 1000;
       const progress = Math.min(1, (now - startTimeRef.current) / DURATION);
+      const drag = Math.pow(0.32, elapsed);
+      const opacity = Math.max(0, (1 - Math.pow(progress, 1.6)) * 0.98);
+
+      for (let i = 0; i < shards.length; i++) {
+        const s = shards[i];
+        const el = domElements[i];
+        if (!el) continue;
+
+        const x = s.originX + s.vx * elapsed * drag;
+        const y = s.originY + s.vy * elapsed * drag + (elapsed * elapsed * 200);
+        const z = s.vz * elapsed;
+        const rX = s.rotX + s.vRotX * elapsed;
+        const rY = s.rotY + s.vRotY * elapsed;
+        const rZ = s.rotZ + s.vRotZ * elapsed;
+
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        el.style.opacity = opacity;
+        el.style.transform = `translate3d(-50%, -50%, ${z}px) rotateX(${rX}deg) rotateY(${rY}deg) rotateZ(${rZ}deg)`;
+      }
 
       if (progress < 1) {
-        setShards((prev) =>
-          prev.map((s) => {
-            const drag = Math.pow(0.32, elapsed);
-            const curX = s.originX + s.vx * elapsed * drag;
-            const curY = s.originY + s.vy * elapsed * drag + (elapsed * elapsed * 200); // gentle gravity
-            const curZ = s.vz * elapsed;
-            const curRotX = s.rotX + s.vRotX * elapsed;
-            const curRotY = s.rotY + s.vRotY * elapsed;
-            const curRotZ = s.rotZ + s.vRotZ * elapsed;
-            const curOpacity = Math.max(0, (1 - Math.pow(progress, 1.6)) * 0.98);
-
-            return {
-              ...s,
-              x: curX,
-              y: curY,
-              z: curZ,
-              rotX: curRotX,
-              rotY: curRotY,
-              rotZ: curRotZ,
-              opacity: curOpacity,
-            };
-          })
-        );
         animRef.current = requestAnimationFrame(animate);
       } else {
-        setShards([]);
+        if (container) container.innerHTML = '';
         onComplete?.();
       }
     };
@@ -227,40 +244,17 @@ function GlassFractureOverlay({ active, accentColor, onComplete }) {
 
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
+      if (containerRef.current) containerRef.current.innerHTML = '';
     };
   }, [active, accentColor, onComplete]);
-
-  if (!active || shards.length === 0) return null;
 
   return (
     <div
       aria-hidden="true"
+      ref={containerRef}
       className="fixed inset-0 pointer-events-none z-1 overflow-hidden"
       style={{ perspective: '1200px', transformStyle: 'preserve-3d' }}
-    >
-      {shards.map((s) => (
-        <div
-          key={s.id}
-          style={{
-            position: 'absolute',
-            left: `${s.x}px`,
-            top: `${s.y}px`,
-            width: `${s.size}px`,
-            height: `${s.size * s.aspect}px`,
-            clipPath: s.clipPath,
-            background: `linear-gradient(135deg, rgba(255,255,255,0.85) 0%, ${s.color}cc 40%, rgba(5,10,25,0.7) 100%)`,
-            backdropFilter: 'blur(4px)',
-            WebkitBackdropFilter: 'blur(4px)',
-            border: `1px solid ${s.color}`,
-            boxShadow: `0 0 14px ${s.color}, inset 0 0 8px rgba(255,255,255,0.6)`,
-            opacity: s.opacity,
-            transform: `translate3d(-50%, -50%, ${s.z}px) rotateX(${s.rotX}deg) rotateY(${s.rotY}deg) rotateZ(${s.rotZ}deg)`,
-            transformStyle: 'preserve-3d',
-            willChange: 'transform, opacity',
-          }}
-        />
-      ))}
-    </div>
+    />
   );
 }
 

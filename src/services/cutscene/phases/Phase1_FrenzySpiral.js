@@ -5,9 +5,10 @@ import { CUTSCENE_CONFIG } from '../cutsceneConfig';
  * Phase1_FrenzySpiral
  *
  * Phase 1 (0.0s – 1.3s):
- * - Target card accelerates in 2-3 graceful escalating vortex loops around the avatar's hand.
+ * - Target card accelerates in 3.5 graceful escalating vortex loops around the avatar's hand.
  * - Other 4 cards gently expand out and fade into the dark void.
  * - Singularity Core remains stable at 1.0x.
+ * - Plasma trail intensity follows spiral progress (trailOpacity field).
  * - Plays Stereo Plasma Vortex Whoosh sound.
  */
 export class Phase1_FrenzySpiral extends TransitionPhase {
@@ -28,12 +29,17 @@ export class Phase1_FrenzySpiral extends TransitionPhase {
     const t = context.time || 0;
     const cfg = this.config;
 
+    // Plasma trail intensity: grows from 0 → peak at p=0.7 → holds to end
+    // Creates a blazing comet effect during the spiral acceleration
+    const trailOpacity = this.smoothstep(p, 0.0, 0.6) * (1.0 - this.smoothstep(p, 0.90, 1.0) * 0.3);
+
     return {
       phase: this.name,
       progress: p,
       elapsed,
       coreScale: 1.0,
       handClench: 0.0,
+      trailOpacity,             // Plasma trail glow multiplier for CyberCardTrail
       vignette: {
         active: false,
         opacity: 0,

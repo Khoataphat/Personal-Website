@@ -8,6 +8,7 @@ import { CUTSCENE_CONFIG } from '../cutsceneConfig';
  * - All cards are absorbed into the singularity nucleus (scale 0.0001).
  * - The Singularity Core swells dramatically to 1.95x with plasma accretion glow.
  * - Core shifts to the target tab's accent color.
+ * - Emits a concentric shockwave ripple at peak swell (ripple field).
  * - Plays Grand Harmonic Energy Chord & Bell Chime sound.
  */
 export class Phase2_CoreAbsorb extends TransitionPhase {
@@ -30,12 +31,23 @@ export class Phase2_CoreAbsorb extends TransitionPhase {
     // Sinusoidal swell curve (peaks at p = 0.5)
     const swellMultiplier = 1.0 + Math.sin(p * Math.PI) * (cfg.peakCoreScale - 1.0);
 
+    // Ripple wave: fires when core reaches peak expansion (p = 0.45 – 0.75)
+    // Creates a concentric plasma ring that pushes outward from the core surface
+    const rippleActive = p > 0.35 && p < 0.85;
+    const rippleProgress = rippleActive
+      ? Math.min(1, (p - 0.35) / 0.50)
+      : 0;
+
     return {
       phase: this.name,
       progress: p,
       elapsed,
       coreScale: swellMultiplier,
       handClench: 0.0,
+      ripple: {
+        active: rippleActive,
+        progress: rippleProgress,
+      },
       vignette: {
         active: false,
         opacity: 0,

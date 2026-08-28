@@ -156,6 +156,9 @@ export function EditorialDossier() {
       <div
         ref={panelRef}
         className="editorial-stage-panel relative flex flex-col w-full md:w-[68vw] md:max-w-5xl h-[100dvh] md:rounded-r-3xl overflow-visible shadow-2xl"
+        style={{
+          animation: 'dossierSlideIn 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) forwards',
+        }}
       >
         {/* ── Luminous Quantum Electric Plasma Arc Spine ── */}
         <QuantumPlasmaSpine accentColor={accentColor} secondaryColor={secondaryColor} />

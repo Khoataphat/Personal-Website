@@ -325,6 +325,7 @@ export function HeroCosmicScene() {
   const setMouseInactive = useCockpitStore((s) => s.setMouseInactive);
   const isDossierOpen = useCockpitStore((s) => s.isDossierOpen);
   const activeThemeAccent = useCockpitStore((s) => s.activeThemeAccent || '#00f2fe');
+  const heroTransitionPhase = useCockpitStore((s) => s.heroTransition?.phase);
 
   useEffect(() => {
     let alive = true;
@@ -341,6 +342,13 @@ export function HeroCosmicScene() {
   };
 
   const isHighTier = gpuTier >= 2;
+  // Phase 4 (crush): reduce DPR to 0.85x for FPS headroom during Supernova burst
+  // Dossier open: lock to 1.0 DPR for crisp text rendering
+  const canvasDpr = isDossierOpen
+    ? 1.0
+    : heroTransitionPhase === 'crush'
+      ? (isHighTier ? Math.min(window.devicePixelRatio * 0.85, 1.25) : 0.85)
+      : (isHighTier ? [1, 1.5] : 1);
 
   return (
     <div
@@ -355,7 +363,7 @@ export function HeroCosmicScene() {
           alpha: true,
           powerPreference: 'high-performance',
         }}
-        dpr={isDossierOpen ? 1.0 : (isHighTier ? [1, 1.5] : 1)}
+        dpr={canvasDpr}
       >
         <HeroCameraRig />
         <TelemetryTracker />
