@@ -147,24 +147,41 @@ export const useCockpitStore = create((set) => ({
     activeThemeSecondary: SECTION_THEMES[tabIndex]?.secondary || '#818cf8',
     isCardExpanded: false,
   }),
-  closeDossier: () => set({
-    isDossierOpen: false,
-    activeThemeAccent: '#00f2fe',
-    activeThemeSecondary: '#818cf8',
-    heroTransition: {
-      active: false,
-      phase: 'idle',
-      progress: 0,
-      targetTab: null,
-      accentColor: '#00f2fe',
-    },
-  }),
-  switchDossierTab: (tabIndex) => set({
-    activeDossierTab: tabIndex,
-    activeCard: tabIndex,
-    activeThemeAccent: SECTION_THEMES[tabIndex]?.accent || '#00f2fe',
-    activeThemeSecondary: SECTION_THEMES[tabIndex]?.secondary || '#818cf8',
-  }),
+  // ── Page Mode & Continuous Scrolltelling System ───────────────────
+  pageMode: 'hero', // 'hero' | 'transitioning' | 'storytelling'
+  transitionDirection: 'forward', // 'forward' (hero -> storytelling) | 'reverse' (storytelling -> hero)
+  targetScrollSection: 'about', // 'about' | 'skills' | 'projects' | 'blog' | 'contact'
+  activeStorySection: 'about',
+  setPageMode: (mode) => set({ pageMode: mode }),
+  setTargetScrollSection: (id) => set({ targetScrollSection: id }),
+  setActiveStorySection: (id) => set({ activeStorySection: id }),
+
+  enterStorytelling: (sectionId = 'about') => {
+    set({
+      pageMode: 'transitioning',
+      transitionDirection: 'forward',
+      targetScrollSection: sectionId,
+    });
+  },
+
+  completeTransitionToStorytelling: () => {
+    set({
+      pageMode: 'storytelling',
+    });
+  },
+
+  returnToHero: () => {
+    set({
+      pageMode: 'transitioning',
+      transitionDirection: 'reverse',
+    });
+  },
+
+  completeReturnToHero: () => {
+    set({
+      pageMode: 'hero',
+    });
+  },
 }));
 
 // Expose store globally in development mode for easy DevTools inspection

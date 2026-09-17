@@ -1,13 +1,12 @@
 import React, { useRef, useEffect, useState, Suspense } from 'react';
 import * as THREE from 'three';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { getGPUTier } from 'detect-gpu';
 import { useCockpitStore } from '../../store/cockpitStore';
 import { CosmicGalaxyBackdrop } from './CosmicGalaxyBackdrop';
 import { HeroBustAvatar } from './HeroBustAvatar';
 import { QuantumPhotonStream3D } from './QuantumPhotonStream3D';
-import { cutsceneDirector } from '../../services/cutscene';
 
 /**
  * Telemetry tracker (FPS, UTC clock)
@@ -203,7 +202,7 @@ function HeroCameraRig() {
     const heroTransition = useCockpitStore.getState().heroTransition;
     const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
 
-    // Smoothly adapt target spherical values based on Split Stage vs Sovereign Hero vs Cutscene
+    // Sovereign Hero Sovereign Framing
     let targetRadius = DEFAULT_SPHERICAL.radius;
     let targetPhi = DEFAULT_SPHERICAL.phi;
     let targetTheta = DEFAULT_SPHERICAL.theta;
@@ -213,38 +212,19 @@ function HeroCameraRig() {
     let shakeOffset = { x: 0, y: 0, z: 0 };
     let cameraSpeedFactor = 3.5;
 
-    const cutsceneState = cutsceneDirector.getCurrentState();
-
-    if (cutsceneDirector.active && cutsceneState?.camera) {
-      const cam = cutsceneState.camera;
-      targetRadius = cam.radius;
-      targetPhi = cam.phi;
-      targetTheta = cam.theta;
-      targetY = cam.targetY;
-      targetShiftX = cam.targetShiftX ?? 0;
-      shakeOffset = cam.shakeOffset || { x: 0, y: 0, z: 0 };
-      cameraSpeedFactor = cam.speedFactor || 5.5;
-
-      if (cam.fov && Math.abs(camera.fov - cam.fov) > 0.01) {
-        camera.fov = cam.fov;
-        camera.updateProjectionMatrix();
-      }
-    } else if (isDossierOpen) {
+    if (isDossierOpen) {
       if (camera.fov !== 45) {
         camera.fov = 45;
         camera.updateProjectionMatrix();
       }
       if (isDesktop) {
-        // True Frontal Square View (Z-axis 100% perpendicular to chest) + Asymmetric Camera Frustum Shift
         targetRadius = 2.05;
-        targetPhi = Math.PI * 0.50; // Dead eye level
-        targetTheta = 0.0;          // 100% frontal, zero orbit angle
+        targetPhi = Math.PI * 0.50;
+        targetTheta = 0.0;
         targetX = 0;
         targetY = 0.05;
-        // Shift frustum projection so model sits at ~76.5% viewport with ZERO oblique distortion
         targetShiftX = -(window.innerWidth * 0.265);
       } else {
-        // Mobile Full Drawer: Lift avatar slightly to head level
         targetRadius = 2.45;
         targetPhi = Math.PI * 0.51;
         targetTheta = -0.10;

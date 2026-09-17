@@ -1,29 +1,26 @@
 import React from 'react';
 import { useCockpitStore } from '../../store/cockpitStore';
 import { soundFx } from '../../services/soundFx';
-import { Volume2, VolumeX, Radio, Sparkles } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
 
 /**
  * HeroTopNav
  *
- * Refactored into two independent Floating Cyber HUD elements:
- * 1. Top-Left: Floating Glass Brand Island (Logo "K" + Name "KHOA" + System/FPS Telemetry)
- * 2. Top-Right: Floating Audio Toggle Pill (Glassmorphic Audio On/Off state)
- *
- * The full-width top navigation bar has been removed to free up 100% of the 3D Cosmos sky.
+ * Floating Cyber HUD elements:
+ * 1. Top-Left: Floating Signature Brand ("Khoa") + "RETURN TO CORE" button in storytelling mode
+ * 2. Top-Right: Floating Audio Toggle Pill
  */
 export function HeroTopNav() {
   const isAudioMuted = useCockpitStore((s) => s.isAudioMuted);
   const toggleMute = useCockpitStore((s) => s.toggleMute);
-  const telemetry = useCockpitStore((s) => s.telemetry);
-  
-  const isDossierOpen = useCockpitStore((s) => s.isDossierOpen);
-  const closeDossier = useCockpitStore((s) => s.closeDossier);
+  const pageMode = useCockpitStore((s) => s.pageMode);
+  const returnToHero = useCockpitStore((s) => s.returnToHero);
+
+  const isStorytelling = pageMode === 'storytelling';
 
   const handleBrandClick = () => {
-    if (isDossierOpen) {
-      soundFx.playClose?.();
-      closeDossier?.();
+    if (isStorytelling) {
+      returnToHero();
     } else {
       soundFx.playDockClick?.();
     }
@@ -39,23 +36,19 @@ export function HeroTopNav() {
       {/* ── 1. Top-Left Floating Neon Signature Brand ───────────────── */}
       <aside
         aria-label="System Identity"
-        className="fixed z-[60] select-none"
+        className="fixed z-[60] select-none flex items-center gap-4 pointer-events-auto"
         style={{
           top: 'clamp(18px, 2.8vh, 32px)',
           left: 'clamp(24px, 3.5vw, 48px)',
           zIndex: 60,
-          opacity: isDossierOpen ? 0 : 1,
-          pointerEvents: isDossierOpen ? 'none' : 'auto',
-          visibility: isDossierOpen ? 'hidden' : 'visible',
-          transition: 'opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s',
         }}
       >
         <button
           type="button"
           onClick={handleBrandClick}
-          aria-label={isDossierOpen ? "Close dossier and return to Cosmos Hero view" : "Khoa Portfolio Home"}
+          aria-label="Khoa Portfolio Home"
           className="group flex flex-col items-start cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 text-left border-0 bg-transparent p-0 focus:outline-none"
-          title={isDossierOpen ? "Return to Cosmos Hero [ESC]" : "Dang Khoa Sovereign System"}
+          title={isStorytelling ? "Return to Hero 3D" : "Dang Khoa Sovereign System"}
         >
           {/* Fluid Neon Calligraphy Signature Wordmark */}
           <span
@@ -77,7 +70,7 @@ export function HeroTopNav() {
             Khoa
           </span>
 
-          {/* Artistic Calligraphy Brush Flourish (Loop at start, thick belly, soaring upward ascent) */}
+          {/* Artistic Calligraphy Brush Flourish */}
           <svg
             width="96"
             height="22"
@@ -102,38 +95,31 @@ export function HeroTopNav() {
                 </feMerge>
               </filter>
             </defs>
-            {/* Calligraphy stroke with variable thickness (thin loop -> thick middle belly -> fine rising tip) */}
             <path
-              d="M 10,13.5
-                 C 6,15.5 2,16 1.5,12
-                 C 1,7.5 6,5 10,7.5
-                 C 14.5,10.5 16,15 22,16.5
-                 C 34,18.5 50,17.5 66,12
-                 C 76,8.5 85,4 92,1.2
-                 C 92.8,0.9 91.5,2.4 89,3.8
-                 C 79,9.8 69,14 56,17.2
-                 C 41,20.5 26,19 17.5,14.8
-                 C 13,12 9.5,9 7,9.5
-                 C 4.5,10 3.8,12.5 5.5,14
-                 C 7.5,15.5 9.5,14.5 10,13.5 Z"
-              fill="url(#sigCalligraphyGrad)"
+              d="M 6 4 C 18 16, 44 20, 72 10 C 82 6, 88 2, 92 -4"
+              stroke="url(#sigCalligraphyGrad)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
               filter="url(#sigCalligraphyGlow)"
-            />
-            {/* Micro accent starlight at soaring apex */}
-            <circle
-              cx="92.5"
-              cy="1.2"
-              r="1.2"
-              fill="#ffffff"
-              style={{ filter: 'drop-shadow(0 0 5px #00f2fe)' }}
             />
           </svg>
         </button>
+
+        {/* ── Return to Hero 3D Button (When in Storytelling mode) ──── */}
+        {isStorytelling && (
+          <button
+            onClick={() => returnToHero()}
+            className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full font-mono text-xs text-cyan-300 bg-[#060c1d]/90 border border-cyan-500/50 hover:border-cyan-400 hover:text-white shadow-[0_0_18px_rgba(0,242,254,0.35)] backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95"
+          >
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+            <span className="tracking-wider font-bold">◈ RETURN TO CORE</span>
+          </button>
+        )}
       </aside>
 
       {/* ── 2. Top-Right Floating Audio Toggle Button ────────────────── */}
       <div
-        className="fixed z-[60] pointer-events-auto select-none"
+        className="fixed z-[60] pointer-events-auto select-none flex items-center gap-3"
         style={{
           top: 'clamp(20px, 3vh, 36px)',
           right: 'clamp(24px, 3.5vw, 48px)',
@@ -141,6 +127,16 @@ export function HeroTopNav() {
           zIndex: 60,
         }}
       >
+        {/* Return to Hero button on mobile in top right */}
+        {isStorytelling && (
+          <button
+            onClick={() => returnToHero()}
+            className="sm:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-full font-mono text-[10px] text-cyan-300 bg-[#060c1d]/90 border border-cyan-500/50 backdrop-blur-md"
+          >
+            <span>◈ HERO</span>
+          </button>
+        )}
+
         <button
           onClick={handleMuteClick}
           aria-label={!isAudioMuted ? "Mute interactive audio" : "Enable audio"}

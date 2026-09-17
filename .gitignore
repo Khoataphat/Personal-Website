@@ -150,5 +150,8 @@ Thumbs.db
 *.pem
 *.key
 *.cert
-*.pfx
 *.crt
+
+# AI Agent skills & customizations (local only)
+.agents/
+.agent/

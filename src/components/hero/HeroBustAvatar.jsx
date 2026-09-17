@@ -1,10 +1,11 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { useCockpitStore } from '../../store/cockpitStore';
 import { soundFx } from '../../services/soundFx';
-import { cutsceneDirector } from '../../services/cutscene';
+import { CyberTargetReticle3D } from './CyberTargetReticle3D';
+import { CyberHubCallout3D } from './CyberHubCallout3D';
 
 const GLB_PATH = `${import.meta.env.BASE_URL}models/avatar.glb`;
 
@@ -46,453 +47,8 @@ const FILL_COLOR = {
   DEFAULT: '#050814',
 };
 
-// 5-Axis Gyroscopic Cross-Orbital System (Atomic Cross-Orbits with Alternating Bi-directional Flow, 72° Phase Lock)
-const INDIVIDUAL_ORBITS = [
-  {
-    item: { label: 'ABOUT', icon: '◈', accent: '#FF2E63' }, // Electric Ruby
-    radius: 0.245,
-    initialAngle: 0,
-    inclination: [0.42, 0.25, 0.18], // Left cross tilt
-    speed: -0.22,
-    arcAngle: 0.68,
-    height: 0.046,
-    trailLength: 0.88,
-  },
-  {
-    item: { label: 'SKILLS', icon: '⬡', accent: '#FF7B00' }, // Solar Orange
-    radius: 0.275,
-    initialAngle: (2 * Math.PI) / 5, // 72 deg
-    inclination: [-0.45, -0.28, -0.22], // Right cross tilt
-    speed: 0.22,
-    arcAngle: 0.66,
-    height: 0.046,
-    trailLength: 0.88,
-  },
-  {
-    item: { label: 'WORK', icon: '◎', accent: '#D4FF00' }, // Acid Lime
-    radius: 0.305,
-    initialAngle: (4 * Math.PI) / 5, // 144 deg
-    inclination: [0.75, -0.15, 0.35], // Steep diagonal tilt
-    speed: -0.22,
-    arcAngle: 0.64,
-    height: 0.046,
-    trailLength: 0.92,
-  },
-  {
-    item: { label: 'BLOG', icon: '✦', accent: '#F72585' }, // Hot Magenta
-    radius: 0.335,
-    initialAngle: (6 * Math.PI) / 5, // 216 deg
-    inclination: [-0.72, 0.20, -0.32], // Reverse steep diagonal tilt
-    speed: 0.22,
-    arcAngle: 0.62,
-    height: 0.046,
-    trailLength: 0.86,
-  },
-  {
-    item: { label: 'CONTACT', icon: '⬟', accent: '#00F2FE' }, // Ice Cyan
-    radius: 0.365,
-    initialAngle: (8 * Math.PI) / 5, // 288 deg
-    inclination: [0.15, -0.05, 0.05], // Equatorial shallow tilt
-    speed: -0.22,
-    arcAngle: 0.70,
-    height: 0.046,
-    trailLength: 0.95,
-  },
-];
-
 const TARGET_HEIGHT = 3.6;
 
-/**
- * Creates high-DPI cyberpunk viewport front canvas texture
- */
-function createCyberCardTexture(item) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 144;
-  const ctx = canvas.getContext('2d');
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  const w = 480;
-  const h = 116;
-  const x = (canvas.width - w) / 2;
-  const y = (canvas.height - h) / 2;
-  const r = 36;
-
-  // Translucent holographic glass gradient
-  const bgGrad = ctx.createLinearGradient(x, y, x + w, y + h);
-  bgGrad.addColorStop(0, 'rgba(4, 10, 26, 0.82)');
-  bgGrad.addColorStop(0.5, 'rgba(2, 6, 16, 0.74)');
-  bgGrad.addColorStop(1, 'rgba(8, 16, 36, 0.82)');
-
-  // Rounded viewport background
-  ctx.save();
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, r);
-  ctx.fillStyle = bgGrad;
-  ctx.fill();
-
-  // Subtle interior grid / scanlines
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-  ctx.lineWidth = 1;
-  for (let ly = y + 8; ly < y + h; ly += 12) {
-    ctx.beginPath();
-    ctx.moveTo(x + 16, ly);
-    ctx.lineTo(x + w - 16, ly);
-    ctx.stroke();
-  }
-
-  // Neon glowing outer border
-  ctx.shadowColor = item.accent;
-  ctx.shadowBlur = 18;
-  ctx.strokeStyle = item.accent;
-  ctx.lineWidth = 3.5;
-  ctx.stroke();
-
-  // Inner subtle highlight border
-  ctx.shadowBlur = 0;
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-  ctx.lineWidth = 1.0;
-  ctx.stroke();
-  ctx.restore();
-
-  // Cyber corner brackets [ ]
-  ctx.save();
-  ctx.strokeStyle = item.accent;
-  ctx.lineWidth = 2.5;
-  const blen = 16;
-  // Top left
-  ctx.beginPath();
-  ctx.moveTo(x + 22, y + 10);
-  ctx.lineTo(x + 10, y + 10);
-  ctx.lineTo(x + 10, y + 10 + blen);
-  ctx.stroke();
-  // Bottom right
-  ctx.beginPath();
-  ctx.moveTo(x + w - 22, y + h - 10);
-  ctx.lineTo(x + w - 10, y + h - 10);
-  ctx.lineTo(x + w - 10, y + h - 10 - blen);
-  ctx.stroke();
-  ctx.restore();
-
-  // Left Icon Glyph
-  ctx.save();
-  ctx.shadowColor = item.accent;
-  ctx.shadowBlur = 16;
-  ctx.fillStyle = item.accent;
-  ctx.font = 'bold 44px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(item.icon, x + 56, y + h / 2);
-  ctx.restore();
-
-  // Text Label
-  ctx.save();
-  ctx.shadowColor = item.accent;
-  ctx.shadowBlur = 14;
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 36px "Fira Code", monospace';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.letterSpacing = '3.5px';
-  ctx.fillText(item.label, x + 100, y + h / 2 + 1);
-  ctx.restore();
-
-  // Status pulse dot on right
-  ctx.save();
-  ctx.shadowColor = item.accent;
-  ctx.shadowBlur = 14;
-  ctx.fillStyle = item.accent;
-  ctx.beginPath();
-  ctx.arc(x + w - 46, y + h / 2, 8, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#FFFFFF';
-  ctx.beginPath();
-  ctx.arc(x + w - 46, y + h / 2, 3.5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.generateMipmaps = true;
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-  return texture;
-}
-
-/**
- * Creates dynamic glowing plasma aura envelope texture surrounding the card
- */
-function createCardAuraTexture(accent) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 160;
-  const ctx = canvas.getContext('2d');
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  const w = 496;
-  const h = 136;
-  const x = (canvas.width - w) / 2;
-  const y = (canvas.height - h) / 2;
-  const r = 40;
-
-  // Outer plasma haze
-  ctx.save();
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, r);
-  const auraGrad = ctx.createRadialGradient(
-    canvas.width / 2,
-    canvas.height / 2,
-    20,
-    canvas.width / 2,
-    canvas.height / 2,
-    canvas.width / 2
-  );
-  auraGrad.addColorStop(0, `${accent}44`);
-  auraGrad.addColorStop(0.5, `${accent}22`);
-  auraGrad.addColorStop(0.85, `${accent}11`);
-  auraGrad.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = auraGrad;
-  ctx.fill();
-
-  // Vibrant outer aura energy boundary
-  ctx.shadowColor = accent;
-  ctx.shadowBlur = 24;
-  ctx.strokeStyle = accent;
-  ctx.lineWidth = 4;
-  ctx.stroke();
-
-  // Secondary luminous halo ring
-  ctx.shadowBlur = 12;
-  ctx.strokeStyle = '#FFFFFF';
-  ctx.lineWidth = 1.2;
-  ctx.stroke();
-  ctx.restore();
-
-  // Energy edge flares at corners
-  ctx.save();
-  ctx.strokeStyle = '#FFFFFF';
-  ctx.lineWidth = 2.0;
-  ctx.shadowColor = accent;
-  ctx.shadowBlur = 14;
-  const flareLen = 18;
-  ctx.beginPath();
-  ctx.moveTo(x + 10, y + h / 2 - flareLen);
-  ctx.lineTo(x + 10, y + h / 2 + flareLen);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(x + w - 10, y + h / 2 - flareLen);
-  ctx.lineTo(x + w - 10, y + h / 2 + flareLen);
-  ctx.stroke();
-  ctx.restore();
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.generateMipmaps = true;
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-  return texture;
-}
-
-/**
- * 3D Plasma Aura Envelope wrapping tightly around the card
- */
-function CyberCardAura({ accent, radius, arcAngle, height }) {
-  const texture = useMemo(() => createCardAuraTexture(accent), [accent]);
-
-  const auraArc = arcAngle * 1.08;
-  const geometry = useMemo(() => {
-    return new THREE.CylinderGeometry(
-      radius * 1.002,
-      radius * 1.002,
-      height * 1.35,
-      20,
-      1,
-      true,
-      -auraArc / 2,
-      auraArc
-    );
-  }, [radius, height, auraArc]);
-
-  const material = useMemo(() => {
-    return new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      opacity: 0.85,
-      side: THREE.DoubleSide,
-      depthTest: true,
-      depthWrite: false,
-      toneMapped: false,
-    });
-  }, [texture]);
-
-  return <mesh geometry={geometry} material={material} />;
-}
-
-/**
- * Creates dynamic glowing gradient comet trail texture seamlessly continuing the aura
- */
-function createTrailTexture(accent, isReversed) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 64;
-  const ctx = canvas.getContext('2d');
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  const grad = ctx.createLinearGradient(0, 0, canvas.width, 0);
-  if (!isReversed) {
-    // Left (0) connects flush to card aura, Right (256) is tail tip fading to zero
-    grad.addColorStop(0, accent);
-    grad.addColorStop(0.15, `${accent}dd`);
-    grad.addColorStop(0.40, `${accent}77`);
-    grad.addColorStop(0.72, `${accent}22`);
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
-  } else {
-    // Left (0) is tail tip fading to zero, Right (256) connects flush to card aura
-    grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(0.28, `${accent}22`);
-    grad.addColorStop(0.60, `${accent}77`);
-    grad.addColorStop(0.85, `${accent}dd`);
-    grad.addColorStop(1, accent);
-  }
-
-  // Tapered aerodynamic energy ribbon shape
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  if (!isReversed) {
-    ctx.moveTo(0, 10);
-    ctx.lineTo(canvas.width, 29);
-    ctx.lineTo(canvas.width, 35);
-    ctx.lineTo(0, 54);
-  } else {
-    ctx.moveTo(0, 29);
-    ctx.lineTo(canvas.width, 10);
-    ctx.lineTo(canvas.width, 54);
-    ctx.lineTo(0, 35);
-  }
-  ctx.closePath();
-  ctx.fill();
-
-  // Intense central laser beam in the trail
-  ctx.strokeStyle = grad;
-  ctx.lineWidth = 2.0;
-  ctx.beginPath();
-  ctx.moveTo(0, 32);
-  ctx.lineTo(canvas.width, 32);
-  ctx.stroke();
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.generateMipmaps = true;
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-  return texture;
-}
-
-/**
- * Colored Glowing Comet Trail Ribbon
- * Extends backward from card aura's trailing edge along the circular orbit
- */
-function CyberCardTrail({ accent, radius, arcAngle, trailLength, speed, height }) {
-  const isReversed = speed > 0;
-  const texture = useMemo(() => createTrailTexture(accent, isReversed), [accent, isReversed]);
-
-  const thetaStart = isReversed ? -arcAngle / 2 - trailLength : arcAngle / 2;
-
-  const geometry = useMemo(() => {
-    return new THREE.CylinderGeometry(
-      radius,
-      radius,
-      height * 1.15,
-      24,
-      1,
-      true,
-      thetaStart,
-      trailLength
-    );
-  }, [radius, height, thetaStart, trailLength]);
-
-  const material = useMemo(() => {
-    return new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      opacity: 0.90,
-      side: THREE.DoubleSide,
-      depthTest: true,
-      depthWrite: false,
-      toneMapped: false,
-    });
-  }, [texture]);
-
-  return <mesh geometry={geometry} material={material} />;
-}
-
-/**
- * 3D Curved Cyberpunk Viewport Mesh
- * Translucent single-pane see-through holographic glass.
- * Front shows crisp HUD; Back naturally reveals the flipped/mirrored reverse of the glass.
- */
-function CurvedCyberCard({ item, radius, arcAngle = 0.74, height = 0.046 }) {
-  const texture = useMemo(() => createCyberCardTexture(item), [item]);
-
-  const geometry = useMemo(() => {
-    // Cylinder segment curved along orbit circle of radius R
-    return new THREE.CylinderGeometry(
-      radius,
-      radius,
-      height,
-      20,
-      1,
-      true,
-      -arcAngle / 2,
-      arcAngle
-    );
-  }, [radius, height, arcAngle]);
-
-  const material = useMemo(() => {
-    return new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      opacity: 0.92,
-      side: THREE.DoubleSide,
-      depthTest: true,
-      depthWrite: false,
-      toneMapped: false,
-    });
-  }, [texture]);
-
-  const handlePointerDown = (e) => {
-    e.stopPropagation();
-    const tabMap = { 'ABOUT': 0, 'SKILLS': 1, 'WORK': 2, 'BLOG': 3, 'CONTACT': 4 };
-    const tabIndex = tabMap[item.label] ?? 0;
-    const store = useCockpitStore.getState();
-    if (!store.isDossierOpen) {
-      soundFx.playDockClick?.();
-      store.startHeroTransition(tabIndex);
-    } else {
-      soundFx.playPanelSwitch?.();
-      store.switchDossierTab(tabIndex);
-    }
-  };
-
-  return (
-    <mesh
-      geometry={geometry}
-      material={material}
-      onPointerDown={handlePointerDown}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        document.body.style.cursor = 'pointer';
-      }}
-      onPointerOut={() => {
-        document.body.style.cursor = 'auto';
-      }}
-    />
-  );
-}
 
 /**
  * Procedural 2x2 Twill Carbon Weave & Razor-Thin Nano Laser Traces Shader
@@ -1225,6 +781,7 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
   const handMatRef = useRef(null);
   const mazeMatRef = useRef(null);
   const currentHeadRotRef = useRef({ yaw: 0, pitch: 0 });
+  const [orbPos, setOrbPos] = useState([0, -0.28, 0.42]);
   const orbitRefs = useRef([]);
   const shaderMatsRef = useRef([]);
   const eyeMatsRef = useRef([]);
@@ -1392,33 +949,34 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
         child.visible = true;
         child.renderOrder = 8;
         eyeMeshes.push(child);
-        if (child.parent) headNodesSet.add(child.parent);
+        headNodesSet.add(child.parent || child);
         return;
       }
 
-      // ── Procedural Voronoi Facet Shader for Mask Faceplate ───────────
+      // ── Collect Head Pivot Parent Components (Mask + Straps) ──────────
+      if (meshName.startsWith('Mask') || meshName.startsWith('straps')) {
+        headNodesSet.add(child.parent || child);
+      }
+
+      // ── Specialized Procedural Shader per Part ────────────────────────
       if (meshName.startsWith('Mask')) {
         child.material = matPool.mask;
         child.visible = true;
         child.renderOrder = 5;
-        if (child.parent) headNodesSet.add(child.parent);
         return;
       }
 
-      // ── Procedural Violet Facet Shader for Straps ────────────────────
+      if (meshName.startsWith('Cloth_Robe') || meshName.includes('Robe')) {
+        child.material = matPool.robe;
+        child.visible = true;
+        child.renderOrder = 2;
+        return;
+      }
+
       if (meshName.startsWith('straps') || meshName.includes('Straps')) {
         child.material = matPool.straps;
         child.visible = true;
         child.renderOrder = 6;
-        if (child.parent) headNodesSet.add(child.parent);
-        return;
-      }
-
-      // ── Procedural Cyber Emerald Facet Shader for Cloth Robe ─────────
-      if (meshName.startsWith('Cloth') || meshName.includes('Robe')) {
-        child.material = matPool.robe;
-        child.visible = true;
-        child.renderOrder = 2;
         return;
       }
 
@@ -1484,12 +1042,6 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
     cloned.scale.setScalar(initialScale);
 
     // ── CRITICAL FIX: Recompute Hand Bounding Box AFTER model scale ──────
-    // geometry.boundingBox is in local (pre-scale) space; when we pass it to
-    // the vertex shader as uHandBoundsMin/Max, the shader works in that same
-    // local space — so the scale factor cancels out and the bounds remain correct.
-    // However, the palmCenter (uPalmCenter) IS also in local space, so everything
-    // is self-consistent. We just need to ensure computeBoundingBox() has been
-    // called so the values are not null.
     cloned.traverse((child) => {
       if (!child.isMesh && !child.isSkinnedMesh) return;
       const meshName = child.name || '';
@@ -1656,28 +1208,32 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
     );
 
     if (headGroupRef.current) {
-      headGroupRef.current.rotation.y = currentHeadRotRef.current.yaw;
-      headGroupRef.current.rotation.x = currentHeadRotRef.current.pitch;
+      headGroupRef.current.rotation.set(
+        currentHeadRotRef.current.pitch,
+        currentHeadRotRef.current.yaw,
+        0,
+        'YXZ'
+      );
     }
 
-    // ── 3. Update Exact 4x4 Head Skinning Matrix on Continuous Neck Body Mesh ──
+    // ── 3. Head Joint Matrix Calculation for Skinning ─────────────────
     if (headGroupRef.current && bodyMeshRef.current) {
       const headGroup = headGroupRef.current;
 
-      // Pre-allocated scratch objects (no `new` per frame)
       _scratchVec3.current.set(0.0, 0.166876, 0.161891); // pivotInBodyMesh
       _scratchQuat.current.set(-0.7071068, 0, 0, 0.7071067); // bodyQuatInRoot
 
       const headQuatInRoot = headGroup.quaternion;
-      // deltaQuat = bodyQuat.invert * headQuat * bodyQuat
-      // Reuse _scratchQuat: invert in-place, multiply, multiply back
       const bqCopy = _scratchQuat.current.clone().invert();
       const deltaQuat = bqCopy.multiply(headQuatInRoot).multiply(_scratchQuat.current);
 
-      const px = _scratchVec3.current.x, py = _scratchVec3.current.y, pz = _scratchVec3.current.z;
-      _scratchMat4b.current.makeTranslation(-px, -py, -pz);        // m1
-      _scratchMat4c.current.makeRotationFromQuaternion(deltaQuat); // m2
-      _scratchMat4.current.makeTranslation(px, py, pz);            // m3
+      const px = _scratchVec3.current.x;
+      const py = _scratchVec3.current.y;
+      const pz = _scratchVec3.current.z;
+
+      _scratchMat4b.current.makeTranslation(-px, -py, -pz);         // m1
+      _scratchMat4c.current.makeRotationFromQuaternion(deltaQuat);  // m2
+      _scratchMat4.current.makeTranslation(px, py, pz);             // m3
       _scratchMat4.current.multiplyMatrices(_scratchMat4.current, _scratchMat4c.current).multiply(_scratchMat4b.current);
 
       shaderMatsRef.current.forEach((mat) => {
@@ -1687,42 +1243,20 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
       });
     }
 
-    // ── 4. Torso Grounding: ZERO mouse tilt, only calm levitation bobbing ──
+    // ── 4. Torso Grounding: calm levitation bobbing ───────────────────
     if (rootRef.current) {
       rootRef.current.position.y = position[1] + Math.sin(t * 1.1) * 0.02;
       rootRef.current.rotation.set(0, 0, 0);
     }
 
-    // ── 5. Cinematic Hand Crush Transition (OOP Cutscene Engine) ───────
-    const heroTransition = useCockpitStore.getState().heroTransition;
-    let transitionScaleMultiplier = 1.0;
-    let frameState = null;
-
-    if (heroTransition && heroTransition.active) {
-      const targetTab = heroTransition.targetTab ?? 0;
-      const accentColor = heroTransition.accentColor || '#00f2fe';
-      frameState = cutsceneDirector.update(t, delta, { targetTab, accentColor });
-
-      if (frameState) {
-        transitionScaleMultiplier = frameState.coreScale ?? 1.0;
-        if (handMatRef.current?.uniforms?.uClenchProgress) {
-          handMatRef.current.uniforms.uClenchProgress.value = frameState.handClench ?? 0.0;
-        }
-      }
-    } else {
-      if (handMatRef.current?.uniforms?.uClenchProgress) {
-        handMatRef.current.uniforms.uClenchProgress.value = 0.0;
-      }
-    }
-
-    // Dynamic scale interpolation (defaults to 50%, smoothly scales to 75% on hover)
+    // Dynamic scale interpolation
     const desiredScale = coreScale !== null ? coreScale : targetScaleRef.current;
     currentScaleRef.current = THREE.MathUtils.lerp(
       currentScaleRef.current,
       desiredScale,
       CELESTIAL_CONFIG.lerpSpeed
     );
-    const scale = currentScaleRef.current * transitionScaleMultiplier;
+    const scale = currentScaleRef.current;
 
     if (mazeNode) {
       const worldPos = new THREE.Vector3();
@@ -1735,6 +1269,15 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
       useCockpitStore.getState().setOrbScreenPos({ x: screenX, y: screenY });
       useCockpitStore.getState().setOrbWorldPos({ x: worldPos.x, y: worldPos.y, z: worldPos.z });
 
+      // Smoothly update reticle/hub position
+      if (
+        Math.abs(orbPos[0] - worldPos.x) > 0.002 ||
+        Math.abs(orbPos[1] - worldPos.y) > 0.002 ||
+        Math.abs(orbPos[2] - worldPos.z) > 0.002
+      ) {
+        setOrbPos([worldPos.x, worldPos.y, worldPos.z]);
+      }
+
       // Scale the singularity core sphere proportionally relative to its native GLB scale
       if (mazeNode.userData && mazeNode.userData.initialScale) {
         mazeNode.scale.copy(mazeNode.userData.initialScale).multiplyScalar(scale);
@@ -1746,40 +1289,6 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
       if (hitAreaRef.current) {
         hitAreaRef.current.position.copy(worldPos);
       }
-
-      // Orbit each of the 5 cards along its independent gyroscopic cross-orbital trajectory
-      INDIVIDUAL_ORBITS.forEach((orbit, i) => {
-        const ref = orbitRefs.current[i];
-        if (!ref) return;
-
-        ref.position.copy(worldPos);
-
-        if (frameState) {
-          const targetTab = heroTransition.targetTab ?? 0;
-          if (i === targetTab && typeof frameState.calculateTargetCard === 'function') {
-            const cardTransform = frameState.calculateTargetCard(orbit, scale);
-            ref.rotation.x = cardTransform.rotation.x;
-            ref.rotation.y = cardTransform.rotation.y;
-            ref.rotation.z = cardTransform.rotation.z;
-            ref.scale.setScalar(cardTransform.scale);
-            ref.visible = cardTransform.visible !== false;
-          } else if (typeof frameState.calculateOtherCard === 'function') {
-            const cardTransform = frameState.calculateOtherCard(orbit, scale);
-            ref.rotation.x = cardTransform.rotation.x;
-            ref.rotation.y = cardTransform.rotation.y;
-            ref.rotation.z = cardTransform.rotation.z;
-            ref.scale.setScalar(cardTransform.scale);
-            ref.visible = cardTransform.visible !== false;
-          }
-        } else {
-          // Normal idle gyroscopic orbit
-          ref.rotation.x = orbit.inclination[0];
-          ref.rotation.y = t * orbit.speed + orbit.initialAngle;
-          ref.rotation.z = orbit.inclination[2];
-          ref.scale.setScalar(scale);
-          ref.visible = true;
-        }
-      });
     }
   });
 
@@ -1806,40 +1315,9 @@ export function HeroBustAvatar({ position = [0, -2.15, 0], coreScale = null }) {
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
 
-      {/* ── 5 Concentric Rigid Circular Orbits with Unified Plasma Aura & Comet Trails ── */}
-      {INDIVIDUAL_ORBITS.map((orbit, i) => (
-        <group
-          key={orbit.item.label}
-          ref={(el) => (orbitRefs.current[i] = el)}
-          rotation={orbit.inclination}
-        >
-          {/* Continuous Plasma Stream Tail */}
-          <CyberCardTrail
-            accent={orbit.item.accent}
-            radius={orbit.radius}
-            arcAngle={orbit.arcAngle}
-            trailLength={orbit.trailLength}
-            speed={orbit.speed}
-            height={orbit.height}
-          />
-
-          {/* Unified Plasma Aura Envelope around the card */}
-          <CyberCardAura
-            accent={orbit.item.accent}
-            radius={orbit.radius}
-            arcAngle={orbit.arcAngle}
-            height={orbit.height}
-          />
-
-          {/* Rigid 3D Curved Cyberpunk Viewport Card */}
-          <CurvedCyberCard
-            item={orbit.item}
-            radius={orbit.radius}
-            arcAngle={orbit.arcAngle}
-            height={orbit.height}
-          />
-        </group>
-      ))}
+      {/* ── Cyber Target Reticle & Hologram Callout ── */}
+      <CyberTargetReticle3D position={orbPos} radius={0.155} />
+      <CyberHubCallout3D orbCenter={orbPos} hubOffset={[0.68, -0.11, 0.10]} />
     </>
   );
 }

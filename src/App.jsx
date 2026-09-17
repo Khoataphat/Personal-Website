@@ -4,45 +4,51 @@ import { HeroCosmicScene } from './components/hero/HeroCosmicScene';
 import { HeroTopNav } from './components/hero/HeroTopNav';
 import { HeroBackgroundTypography, HeroForegroundHUD } from './components/hero/HeroTypography';
 import { CyberHUDIndexRail } from './components/common/CyberHUDIndexRail';
-import { EditorialDossier } from './components/editorial/EditorialDossier';
-import { ExpandedDetailModal } from './components/hero/ExpandedDetailModal';
-import { CinematicShockwavePost } from './components/hero/CinematicShockwavePost';
+import { CyberMatrixPortalOverlay } from './components/common/CyberMatrixPortalOverlay';
+import { ScrolltellingView } from './components/sections/ScrolltellingView';
 import { ProjectDeepDiveModal } from './components/cockpit/ProjectDeepDiveModal';
 import BlogModal from './components/common/BlogModal';
 import PdfViewerModal from './components/common/PdfViewerModal';
 
 export default function App() {
+  const pageMode = useCockpitStore((s) => s.pageMode);
   const activeBlogModal = useCockpitStore((s) => s.activeBlogModal);
   const closeBlogModal = useCockpitStore((s) => s.closeBlogModal);
   const activePdfUrl = useCockpitStore((s) => s.activePdfUrl);
   const closePdfModal = useCockpitStore((s) => s.closePdfModal);
 
+  const isHeroMode = pageMode === 'hero';
+  const isStorytellingMode = pageMode === 'storytelling';
+
   return (
-    <div className="relative w-screen h-[100dvh] min-h-[100dvh] bg-[#070709] text-text-main overflow-hidden select-none">
+    <div className={`relative w-screen bg-[#070709] text-text-main ${isHeroMode ? 'h-[100dvh] min-h-[100dvh] overflow-hidden select-none' : 'min-h-screen overflow-x-hidden'}`}>
 
-      {/* ── 1. Background Typography (Layer 1: z-0 behind 3D Canvas) ── */}
-      <HeroBackgroundTypography />
-
-      {/* ── 2. 3D Hero Cosmic Scene (Layer 2: z-10 Canvas) ──────────── */}
-      <HeroCosmicScene />
-
-      {/* ── 3. Foreground HUD Overlays (Layer 3: z-20/z-30) ─────────── */}
+      {/* ── 1. Top Navigation & Cyber HUD Index Rail (Index rail only in Storytelling) ──── */}
       <HeroTopNav />
-      <HeroForegroundHUD />
+      {isStorytellingMode && <CyberHUDIndexRail />}
 
-      {/* ── Fullscreen Cinematic Shockwave Overlay (Layer: z-55) ────── */}
-      <CinematicShockwavePost />
+      {/* ── 2. Hero 3D Sovereign View (Rendered only in Hero / Transition mode) ── */}
+      <div
+        className={`fixed inset-0 w-full h-full z-10 transition-opacity duration-500 ${
+          isHeroMode || pageMode === 'transitioning' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none hidden'
+        }`}
+      >
+        <HeroBackgroundTypography />
+        <HeroCosmicScene />
+        <HeroForegroundHUD />
+      </div>
 
-      {/* ── 4. Unified Primary Navigation (Layer: z-60 Desktop Rail & Mobile Dial) ── */}
-      <CyberHUDIndexRail />
+      {/* ── 3. Continuous Full-Page Scrolltelling View ────────────────── */}
+      {isStorytellingMode && (
+        <div className="relative w-full z-20 animate-fadeIn">
+          <ScrolltellingView />
+        </div>
+      )}
 
-      {/* ── 5. Minimalist Dark Editorial Dossier (Layer 4: z-50 Fullscreen) ─ */}
-      <EditorialDossier />
+      {/* ── 4. Independent Cyber Shutter / Matrix Portal Transition ──── */}
+      <CyberMatrixPortalOverlay />
 
-      {/* Expanded Section Card Detail Modal */}
-      <ExpandedDetailModal />
-
-      {/* ── Legacy Content Modals (kept for card detail content) */}
+      {/* ── 5. Project Deep Dive, Blog & PDF Modals ──────────────────── */}
       <ProjectDeepDiveModal />
 
       <BlogModal
